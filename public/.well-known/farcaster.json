@@ -1,0 +1,22 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjE5Mzc1MjAsInR5cGUiOiJhdXRoIiwia2V5IjoiMHg2YTkyNDVCRGQ2NzdlYWZGYkM4MDhCODY2MEE2MTJGYkUxRjhmOTBhIn0",
+    "payload": "eyJkb21haW4iOiJjaGVja2luZGFpbHkueHl6In0",
+    "signature": "umq9hZXjEnf8LAzj3is2WmPRu1h3k1/0J8qML1NsxqdMdaQdVLrYtSESJjdQG/wEna4/sCD1lJ+6hzp/BCIm+Bw="
+  },
+  "frame": {
+    "version": "1",
+    "name": "CHECKIN",
+    "iconUrl": "https://checkindaily.xyz/og.jpg",
+    "homeUrl": "https://checkindaily.xyz/",
+    "imageUrl": "https://checkindaily.xyz/og.jpg",
+    "heroImageUrl": "https://checkindaily.xyz/og.jpg",
+    "splashImageUrl": "https://checkindaily.xyz/og.jpg",
+    "splashBackgroundColor": "#050b1f",
+    "webhookUrl": "https://checkindaily.xyz/api/checkin",
+    "primaryCategory": "social",
+    "description": "CHECKIN is a Web3 activity layer that rewards presence. Every check-in proves consistency and unlocks on-chain incentives.",
+    "subtitle": "Build streaks. Get rewarded.",
+    "tags": ["community", "social", "rewards", "engagement"]
+  }
+}

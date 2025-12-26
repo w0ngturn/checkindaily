@@ -1,0 +1,21 @@
+{
+  "frame": {
+    "name": "CHECKIN",
+    "version": "1",
+    "iconUrl": "https://checkin-xyz.vercel.app/og.jpg",
+    "homeUrl": "https://checkin-xyz.vercel.app/",
+    "imageUrl": "https://checkin-xyz.vercel.app/og.jpg",
+    "splashImageUrl": "https://checkin-xyz.vercel.app/og.jpg",
+    "splashBackgroundColor": "#050b1f",
+    "webhookUrl": "https://checkin-xyz.vercel.app/api/checkin",
+    "primaryCategory": "social",
+    "description": "CHECKIN is a Web3 activity layer that rewards presence. Every check-in proves consistency and unlocks on-chain incentives.",
+    "subtitle": "Check in daily. Build streaks. Get rewarded.",
+    "tags": ["community", "social", "rewards", "web3"]
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjE5Mzc1MjAsInR5cGUiOiJhdXRoIiwia2V5IjoiMHg2YTkyNDVCRGQ2NzdlYWZGYkM4MDhCODY2MEE2MTJGYkUxRjhmOTBhIn0",
+    "payload": "eyJkb21haW4iOiJodHRwczovL2NoZWNraW4teHl6LnZlcmNlbC5hcHAvIn0",
+    "signature": "dS5LrJIQaJILi+wB+xcw8V9zjLtICsRElvSoBl+0GWs3wS07+x26Xxj43xM2oMLdtNFekJ+TMWnWpDYm6qo4uhw="
+  }
+}
