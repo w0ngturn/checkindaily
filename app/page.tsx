@@ -26,22 +26,21 @@ export default function Home() {
           sdk = module.sdk
         } catch (e) {
           console.log("[v0] SDK not available")
+          setShowSplash(false)
+          return
         }
 
-        if (sdk && sdk.actions?.ready) {
-          try {
-            // Fire and forget - don't await
-            sdk.actions.ready?.().catch(() => console.log("[v0] Ready action failed"))
-          } catch (e) {
-            console.log("[v0] Ready action failed")
-          }
+        // Fire and forget - don't await ready
+        if (sdk?.actions?.ready) {
+          sdk.actions.ready?.().catch(() => {})
         }
 
+        // Get context but don't block rendering
         if (sdk?.context) {
           try {
             const context = await Promise.race([
-              Promise.resolve(sdk.context),
-              new Promise((_, reject) => setTimeout(() => reject(new Error("Context timeout")), 2000)),
+              sdk.context,
+              new Promise((_, reject) => setTimeout(() => reject("timeout"), 1500)),
             ])
 
             if (context?.user?.fid) {
@@ -54,13 +53,14 @@ export default function Home() {
               })
             }
           } catch (e) {
-            console.log("[v0] Context access failed or timed out")
+            console.log("[v0] Context not available")
           }
         }
       } catch (err) {
-        console.log("[v0] Initialization error:", err)
+        console.log("[v0] Init error:", err)
       } finally {
-        setShowSplash(false)
+        // Always hide splash after 800ms maximum
+        setTimeout(() => setShowSplash(false), 800)
       }
     }
 
