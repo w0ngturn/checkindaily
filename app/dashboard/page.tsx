@@ -36,9 +36,12 @@ async function getDashboardData() {
       cache: "no-store",
     })
     const usersData = await usersRes.json()
+    console.log("[v0] Dashboard users response:", usersData)
     const users = usersData.users || []
+    console.log("[v0] Users array:", users)
 
     const fids = users.map((u: UserData) => u.fid)
+    console.log("[v0] FIDs extracted:", fids)
     let profiles: Record<number, UserProfile> = {}
 
     if (fids.length > 0) {
@@ -46,6 +49,7 @@ async function getDashboardData() {
         cache: "no-store",
       })
       profiles = await profilesRes.json()
+      console.log("[v0] Profiles fetched:", profiles)
     }
 
     return { stats, users, profiles }
