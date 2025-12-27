@@ -6,6 +6,7 @@ import { StreakDisplay } from "@/components/streak-display"
 import { RewardsDisplay } from "@/components/rewards-display"
 import { AnalyticsPanel } from "@/components/analytics-panel"
 import { Leaderboard } from "@/components/leaderboard"
+import { BottomNav } from "@/components/bottom-nav"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
   const [checkinSuccess, setCheckinSuccess] = useState(false)
   const [checkinData, setCheckinData] = useState<any>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [activeTab, setActiveTab] = useState<"leaderboard" | "features" | "roadmap">("leaderboard")
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -31,12 +33,10 @@ export default function Home() {
           return
         }
 
-        // Fire and forget - don't await ready
         if (sdk?.actions?.ready) {
           sdk.actions.ready?.().catch(() => {})
         }
 
-        // Get context but don't block rendering
         if (sdk?.context) {
           try {
             const context = await Promise.race([
@@ -70,7 +70,6 @@ export default function Home() {
       } catch (err) {
         console.log("[v0] Init error:", err)
       } finally {
-        // Always hide splash after 800ms maximum
         setTimeout(() => setShowSplash(false), 800)
       }
     }
@@ -143,63 +142,33 @@ export default function Home() {
     <>
       <SplashScreen isVisible={showSplash} />
 
-      <main className="min-h-screen bg-background text-foreground">
+      <main className="min-h-screen bg-background text-foreground pb-20">
         <div className="mx-auto max-w-[1100px] px-4 sm:px-7">
-          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-5 sm:py-7 gap-4">
+          <header className="flex items-center justify-between py-4">
             <div
-              className="flex h-11 w-11 items-center justify-center rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-400 shadow-xl"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-400 shadow-xl"
               aria-label="CHECKIN logo"
             >
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
                 <path d="M6 12l4 4 8-8" stroke="#020515" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <nav className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <a
-                href="#features"
-                className="rounded-3xl border border-blue-600 px-3 sm:px-4.5 py-2 sm:py-3 text-sm sm:text-base font-bold text-foreground transition-colors hover:bg-blue-950 flex-1 sm:flex-none text-center"
-              >
-                Features
-              </a>
-              <a
-                href="#roadmap"
-                className="rounded-3xl border border-blue-600 px-3 sm:px-4.5 py-2 sm:py-3 text-sm sm:text-base font-bold text-foreground transition-colors hover:bg-blue-950 flex-1 sm:flex-none text-center"
-              >
-                Roadmap
-              </a>
-              <a
-                href="#cta"
-                className="rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-400 px-3 sm:px-4.5 py-2 sm:py-3 text-sm sm:text-base font-bold text-slate-950 shadow-xl transition-shadow hover:shadow-2xl flex-1 sm:flex-none text-center"
-              >
-                Join
-              </a>
-            </nav>
+            <span className="text-sm font-bold text-cyan-400">CHECKIN</span>
           </header>
 
-          <section
-            className="mt-8 sm:mt-15 grid gap-7 grid-cols-1 sm:grid-cols-2"
-            style={{ gridTemplateColumns: "auto" }}
-          >
-            <div className="sm:col-span-1">
-              <span className="inline-flex items-center gap-2 rounded-full bg-blue-950 px-3 py-2 text-xs sm:text-sm font-semibold text-cyan-400">
-                Consistency → Rewards
-              </span>
-              <h1 className="mt-3 sm:mt-4.5 text-3xl sm:text-5xl font-bold leading-tight text-foreground">
-                Check in daily.
-                <br />
-                Build streaks.
-                <br />
-                Get rewarded.
-              </h1>
-              <p className="mt-4 sm:mt-5.5 text-base sm:text-lg text-muted">
-                CHECKIN is a Web3 activity layer that rewards presence. Every check‑in proves consistency and unlocks
-                on‑chain incentives.
-              </p>
-              <div className="mt-4 sm:mt-5.5 flex flex-col sm:flex-row gap-3">
+          <section className="mt-4">
+            <div className="rounded-3xl border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 p-5 shadow-2xl">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-foreground">
+                  Check in daily.
+                  <br />
+                  <span className="text-cyan-400">Get rewarded.</span>
+                </h1>
+                <p className="mt-2 text-sm text-muted">Build streaks and unlock on-chain incentives.</p>
                 <button
                   onClick={handleCheckin}
                   disabled={loading || showSplash}
-                  className="rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-400 px-4 sm:px-4.5 py-3 font-bold text-slate-950 shadow-xl transition-shadow hover:shadow-2xl disabled:opacity-50 text-sm sm:text-base min-h-12 sm:min-h-auto flex items-center justify-center gap-2"
+                  className="mt-4 w-full rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-400 px-4 py-3 font-bold text-slate-950 shadow-xl transition-shadow hover:shadow-2xl disabled:opacity-50 text-sm flex items-center justify-center gap-2"
                 >
                   {showSplash ? (
                     <>
@@ -212,35 +181,21 @@ export default function Home() {
                       Checking in...
                     </>
                   ) : (
-                    "Start Checking In..."
+                    "Start Checking In"
                   )}
                 </button>
-                <a
-                  href="#features"
-                  className="rounded-3xl border border-blue-600 px-4 sm:px-4.5 py-3 font-bold text-foreground transition-colors hover:bg-blue-950 text-sm sm:text-base min-h-12 sm:min-h-auto flex items-center justify-center"
-                >
-                  How it works
-                </a>
+                {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
               </div>
-              {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-            </div>
-            <div
-              className="hidden sm:flex items-center justify-center rounded-3xl border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 p-5.5 shadow-2xl"
-              style={{ aspectRatio: "1" }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-1/2 drop-shadow-lg">
-                <circle cx="12" cy="12" r="9" fill="#020515" />
-                <path d="M7 12l3 3 7-7" stroke="#8ff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
             </div>
           </section>
 
+          {/* Check-in success modal */}
           {checkinSuccess && checkinData && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-              <div className="rounded-4 border border-cyan-400 bg-gradient-to-b from-blue-950 to-blue-900 p-6 sm:p-8 shadow-2xl max-w-sm w-full">
+              <div className="rounded-3xl border border-cyan-400 bg-gradient-to-b from-blue-950 to-blue-900 p-6 shadow-2xl max-w-sm w-full">
                 <div className="text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-400">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-400">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
                       <path
                         d="M6 12l4 4 8-8"
                         stroke="#020515"
@@ -250,34 +205,39 @@ export default function Home() {
                       />
                     </svg>
                   </div>
-                  <h3 className="mb-2 text-xl sm:text-2xl font-bold text-cyan-400">
+                  <h3 className="mb-2 text-xl font-bold text-cyan-400">
                     {checkinData.alreadyCheckedIn ? "Already Checked In!" : "Check-in Successful!"}
                   </h3>
-                  <p className="mb-6 text-muted text-sm sm:text-base">{checkinData.message}</p>
+                  <p className="mb-4 text-muted text-sm">{checkinData.message}</p>
                   <div className="space-y-2">
-                    <div className="rounded-lg bg-blue-900 px-4 py-3 text-sm font-semibold text-foreground">
-                      🔥 Streak: {checkinData.streak} days
+                    <div className="rounded-xl bg-blue-900 px-4 py-2 text-sm font-semibold text-foreground">
+                      Streak: {checkinData.streak} days
                     </div>
                     {!checkinData.alreadyCheckedIn && (
-                      <div className="rounded-lg bg-blue-900 px-4 py-3 text-sm font-semibold text-yellow-400">
+                      <div className="rounded-xl bg-blue-900 px-4 py-2 text-sm font-semibold text-yellow-400">
                         +{checkinData.pointsEarned || 10} points
                       </div>
                     )}
                     {checkinData.tier && (
-                      <div className="rounded-lg bg-blue-900 px-4 py-3 text-sm font-semibold text-cyan-400">
+                      <div className="rounded-xl bg-blue-900 px-4 py-2 text-sm font-semibold text-cyan-400">
                         Tier: {checkinData.tier.toUpperCase()}
                       </div>
                     )}
                   </div>
+                  <button
+                    onClick={() => setCheckinSuccess(false)}
+                    className="mt-4 w-full rounded-xl bg-blue-800 px-4 py-2 text-sm font-semibold text-foreground hover:bg-blue-700"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
           {userFid && (
-            <section className="mt-10 sm:mt-15" key={refreshKey}>
-              <h2 className="mb-4 sm:mb-6 text-xl sm:text-2xl font-bold text-foreground">Your Dashboard</h2>
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+            <section className="mt-4" key={refreshKey}>
+              <div className="grid gap-3 grid-cols-3">
                 <StreakDisplay fid={userFid} />
                 <RewardsDisplay fid={userFid} />
                 <AnalyticsPanel fid={userFid} />
@@ -285,71 +245,84 @@ export default function Home() {
             </section>
           )}
 
-          <section className="mt-10 sm:mt-15">
-            <h2 className="mb-8 sm:mb-12 text-2xl sm:text-4xl font-bold text-foreground">Community Leaderboard</h2>
-            <Leaderboard />
-          </section>
+          <section className="mt-6">
+            {activeTab === "leaderboard" && (
+              <div>
+                <h2 className="mb-4 text-lg font-bold text-foreground">Community Leaderboard</h2>
+                <Leaderboard />
+              </div>
+            )}
 
-          <section id="features" className="mt-15 sm:mt-20">
-            <h2 className="mb-8 sm:mb-12 text-2xl sm:text-4xl font-bold text-foreground">Core Features</h2>
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-              {[
-                { title: "Daily Check‑In", desc: "Simple on‑chain or off‑chain proof of activity." },
-                { title: "Streak Multipliers", desc: "Longer streaks unlock higher rewards." },
-                { title: "Community Drops", desc: "Airdrops based on real engagement, not bots." },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-3 sm:rounded-4.5 border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 p-4 sm:p-5.5 shadow-2xl"
-                >
-                  <h3 className="text-base sm:text-lg font-bold text-foreground">{item.title}</h3>
-                  <p className="mt-2 text-sm text-muted">{item.desc}</p>
+            {activeTab === "features" && (
+              <div>
+                <h2 className="mb-4 text-lg font-bold text-foreground">Core Features</h2>
+                <div className="space-y-3">
+                  {[
+                    { title: "Daily Check-In", desc: "Simple on-chain or off-chain proof of activity.", icon: "📅" },
+                    { title: "Streak Multipliers", desc: "Longer streaks unlock higher rewards.", icon: "🔥" },
+                    { title: "Community Drops", desc: "Airdrops based on real engagement, not bots.", icon: "🎁" },
+                  ].map((item) => (
+                    <div
+                      key={item.title}
+                      className="rounded-2xl border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 p-4 shadow-xl"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl">{item.icon}</span>
+                        <div>
+                          <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
+                          <p className="mt-1 text-xs text-muted">{item.desc}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
+              </div>
+            )}
 
-          <section id="roadmap" className="mt-15 sm:mt-20">
-            <h2 className="mb-8 sm:mb-12 text-2xl sm:text-4xl font-bold text-foreground">Roadmap</h2>
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-              {[
-                { phase: "Phase 1", desc: "Brand, site, social launch" },
-                { phase: "Phase 2", desc: "Check‑in engine + streaks" },
-                { phase: "Phase 3", desc: "Rewards & partnerships" },
-                { phase: "Phase 4", desc: "DAO & integrations" },
-              ].map((item) => (
-                <div
-                  key={item.phase}
-                  className="rounded-2 sm:rounded-4.5 border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 p-3 sm:p-5.5 shadow-2xl"
-                >
-                  <strong className="text-sm sm:text-lg text-foreground">{item.phase}</strong>
-                  <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted">{item.desc}</p>
+            {activeTab === "roadmap" && (
+              <div>
+                <h2 className="mb-4 text-lg font-bold text-foreground">Roadmap</h2>
+                <div className="space-y-3">
+                  {[
+                    { phase: "Phase 1", desc: "Brand, site, social launch", status: "completed" },
+                    { phase: "Phase 2", desc: "Check-in engine + streaks", status: "current" },
+                    { phase: "Phase 3", desc: "Rewards & partnerships", status: "upcoming" },
+                    { phase: "Phase 4", desc: "DAO & integrations", status: "upcoming" },
+                  ].map((item) => (
+                    <div
+                      key={item.phase}
+                      className={`rounded-2xl border p-4 shadow-xl ${
+                        item.status === "current"
+                          ? "border-cyan-400 bg-gradient-to-b from-blue-900 to-blue-950"
+                          : "border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <strong className="text-sm text-foreground">{item.phase}</strong>
+                          <p className="mt-1 text-xs text-muted">{item.desc}</p>
+                        </div>
+                        {item.status === "completed" && (
+                          <span className="rounded-full bg-green-500/20 px-2 py-1 text-xs font-semibold text-green-400">
+                            Done
+                          </span>
+                        )}
+                        {item.status === "current" && (
+                          <span className="rounded-full bg-cyan-400/20 px-2 py-1 text-xs font-semibold text-cyan-400">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </section>
-
-          <section
-            id="cta"
-            className="mt-15 sm:mt-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-3 sm:rounded-4.5 border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 p-4 sm:p-5.5 shadow-2xl"
-          >
-            <div>
-              <h2 className="text-2xl sm:text-4xl font-bold text-foreground">Ready to check in?</h2>
-              <p className="mt-2 text-base sm:text-lg text-muted">Join early and start building your streak.</p>
-            </div>
-            <a
-              href="#"
-              className="w-full sm:w-auto whitespace-nowrap rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-400 px-4 sm:px-4.5 py-3 font-bold text-slate-950 shadow-xl transition-shadow hover:shadow-2xl text-center min-h-12 flex items-center justify-center"
-            >
-              Join Community
-            </a>
-          </section>
-
-          <footer className="mt-15 sm:mt-22.5 border-t border-blue-600 py-5 sm:py-7 text-muted text-sm">
-            <div>© 2025 CHECKIN. Built for consistency.</div>
-          </footer>
         </div>
       </main>
+
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </>
   )
 }
