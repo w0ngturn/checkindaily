@@ -4,16 +4,16 @@
     "payload": "eyJkb21haW4iOiJjaGVja2luZGFpbHkueHl6In0",
     "signature": "umq9hZXjEnf8LAzj3is2WmPRu1h3k1/0J8qML1NsxqdMdaQdVLrYtSESJjdQG/wEna4/sCD1lJ+6hzp/BCIm+Bw="
   },
-  "frame": {
+  "miniapp": {
     "version": "1",
     "name": "CHECKIN",
-    "iconUrl": "https://checkindaily.xyz/og.jpg",
+    "iconUrl": "https://checkindaily.xyz/images/check-20in-20daily.png",
     "homeUrl": "https://checkindaily.xyz/",
-    "imageUrl": "https://checkindaily.xyz/og-banner.jpg",
-    "heroImageUrl": "https://checkindaily.xyz/og-banner.jpg",
-    "splashImageUrl": "https://checkindaily.xyz/og.jpg",
+    "imageUrl": "https://checkindaily.xyz/images/check-20in-20daily.png",
+    "buttonTitle": "Check In Now",
+    "splashImageUrl": "https://checkindaily.xyz/images/check-20in-20daily.png",
     "splashBackgroundColor": "#050b1f",
-    "webhookUrl": "https://checkindaily.xyz/api/checkin",
+    "webhookUrl": "https://checkindaily.xyz/api/notifications/webhook",
     "primaryCategory": "social",
     "description": "CHECKIN is a Web3 activity layer that rewards presence. Every check-in proves consistency and unlocks on-chain incentives.",
     "subtitle": "Build streaks. Get rewarded.",
