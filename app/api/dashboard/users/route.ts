@@ -16,20 +16,30 @@ export async function GET() {
       },
     )
 
+    console.log("[v0] Fetching users from users_checkins table...")
+
     // Get active users with their stats
-    const { data: users } = await supabase
+    const { data: users, error: usersError } = await supabase
       .from("users_checkins")
       .select("fid, username, display_name, streak_count, total_checkins")
       .order("streak_count", { ascending: false })
       .limit(50)
 
+    console.log("[v0] Users query result:", { count: users?.length, error: usersError?.message })
+
     if (!users || users.length === 0) {
+      console.log("[v0] No users found in users_checkins table")
       return Response.json({ users: [] })
     }
 
     // Get rewards data for these users
     const fids = users.map((u: any) => u.fid)
-    const { data: rewards } = await supabase.from("user_rewards").select("fid, total_points, tier").in("fid", fids)
+    const { data: rewards, error: rewardsError } = await supabase
+      .from("user_rewards")
+      .select("fid, total_points, tier")
+      .in("fid", fids)
+
+    console.log("[v0] Rewards query result:", { count: rewards?.length, error: rewardsError?.message })
 
     const rewardsMap = new Map(rewards?.map((r: any) => [r.fid, r]) || [])
 
@@ -43,13 +53,6 @@ export async function GET() {
         displayName = `@fid_${user.fid}`
       }
 
-      console.log("[v0] Dashboard user:", {
-        fid: user.fid,
-        username: user.username,
-        display_name: user.display_name,
-        final: displayName,
-      })
-
       return {
         fid: user.fid,
         username: displayName,
@@ -60,9 +63,10 @@ export async function GET() {
       }
     })
 
+    console.log("[v0] Returning flattened users:", { count: flatUsers.length })
     return Response.json({ users: flatUsers })
   } catch (error) {
-    console.error("Dashboard users error:", error)
+    console.error("[v0] Dashboard users error:", error)
     return Response.json({ error: "Failed to fetch users", users: [] }, { status: 500 })
   }
 }
