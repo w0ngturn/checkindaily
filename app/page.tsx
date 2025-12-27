@@ -6,6 +6,7 @@ import { StreakDisplay } from "@/components/streak-display"
 import { RewardsDisplay } from "@/components/rewards-display"
 import { AnalyticsPanel } from "@/components/analytics-panel"
 import { Leaderboard } from "@/components/leaderboard"
+import { getUsernameFromNeynar } from "@/lib/get-username-client"
 
 export default function Home() {
   const [loading, setLoading] = useState(false)
@@ -44,11 +45,21 @@ export default function Home() {
             ])
 
             if (context?.user?.fid) {
-              setUserFid(context.user.fid)
+              const fid = context.user.fid
+              setUserFid(fid)
+
+              let username = context.user.username || "User"
+              if (!context.user.username || context.user.username === "User") {
+                const neynarUsername = await getUsernameFromNeynar(fid)
+                if (neynarUsername) {
+                  username = neynarUsername
+                }
+              }
+
               setUserData({
-                fid: context.user.fid,
-                username: context.user.username || "User",
-                displayName: context.user.displayName || context.user.username || "User",
+                fid,
+                username,
+                displayName: context.user.displayName || username || "User",
                 pfpUrl: context.user.pfpUrl || null,
               })
             }
