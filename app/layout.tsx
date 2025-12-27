@@ -42,9 +42,23 @@ export const metadata: Metadata = {
       button: {
         title: "Start Checking In",
         action: {
-          type: "launch_frame",
-          name: "CHECKIN",
+          type: "launch_miniapp",
           url: "https://checkindaily.xyz/",
+          name: "CHECKIN",
+          splashImageUrl: "https://checkindaily.xyz/og.jpg",
+          splashBackgroundColor: "#050b1f",
+        },
+      },
+    }),
+    "fc:frame": JSON.stringify({
+      version: "1",
+      imageUrl: "https://checkindaily.xyz/og-banner.jpg",
+      button: {
+        title: "Start Checking In",
+        action: {
+          type: "launch_miniapp",
+          url: "https://checkindaily.xyz/",
+          name: "CHECKIN",
           splashImageUrl: "https://checkindaily.xyz/og.jpg",
           splashBackgroundColor: "#050b1f",
         },
