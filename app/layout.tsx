@@ -26,11 +26,11 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://checkindaily.xyz/og-banner.jpg",
+        url: "https://checkindaily.xyz/api/og",
         width: 1200,
-        height: 800,
+        height: 630,
         alt: "CHECKIN - Check in daily. Build streaks. Get rewarded.",
-        secureUrl: "https://checkindaily.xyz/og-banner.jpg",
+        secureUrl: "https://checkindaily.xyz/api/og",
         type: "image/png",
       },
     ],
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   other: {
     "fc:miniapp": JSON.stringify({
       version: "1",
-      imageUrl: "https://checkindaily.xyz/og-banner.jpg",
+      imageUrl: "https://checkindaily.xyz/api/og",
       button: {
         title: "Start Checking In",
         action: {
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     }),
     "fc:frame": JSON.stringify({
       version: "1",
-      imageUrl: "https://checkindaily.xyz/og-banner.jpg",
+      imageUrl: "https://checkindaily.xyz/api/og",
       button: {
         title: "Start Checking In",
         action: {
@@ -64,9 +64,9 @@ export const metadata: Metadata = {
         },
       },
     }),
-    "og:image": "https://checkindaily.xyz/og-banner.jpg",
+    "og:image": "https://checkindaily.xyz/api/og",
     "og:image:width": "1200",
-    "og:image:height": "800",
+    "og:image:height": "630",
     "og:image:type": "image/png",
     "farcaster:domain": "checkindaily.xyz",
     "farcaster:signature": "dS5LrJIQaJILi+wB+xcw8V9zjLtICsRElvSoBl+0GWs3wS07+x26Xxj43xM2oMLdtNFekJ+TMWnWpDYm6qo4uhw=",
