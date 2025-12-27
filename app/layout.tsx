@@ -66,9 +66,11 @@ export const metadata: Metadata = {
 }
 
 function FrameMetadata() {
+  const OG_IMAGE_URL = "/images/check-20in-20daily.png"
+
   const frameData = {
     version: "1",
-    imageUrl: "https://checkindaily.xyz/api/og",
+    imageUrl: OG_IMAGE_URL,
     button: {
       title: "Start Checking In",
       action: {

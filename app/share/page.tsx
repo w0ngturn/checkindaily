@@ -4,6 +4,8 @@ type Props = {
   searchParams: Promise<{ streak?: string; points?: string; tier?: string }>
 }
 
+const OG_IMAGE_URL = "/images/check-20in-20daily.png"
+
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = await searchParams
   const streak = params.streak || "1"
@@ -12,12 +14,11 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
   const title = `${streak}-Day Streak on CHECKIN!`
   const description = `Earned ${points} points at ${tier} tier. Join me and start building your streak!`
-  const ogImageUrl = `https://checkindaily.xyz/api/og?streak=${streak}&points=${points}&tier=${tier}`
 
   // Frame data for Farcaster embed
   const frameData = {
     version: "1",
-    imageUrl: ogImageUrl,
+    imageUrl: OG_IMAGE_URL,
     button: {
       title: "Start Checking In",
       action: {
@@ -36,7 +37,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     openGraph: {
       title,
       description,
-      images: [{ url: ogImageUrl, width: 1200, height: 630 }],
+      images: [{ url: OG_IMAGE_URL, width: 1200, height: 630 }],
     },
     other: {
       "fc:frame": JSON.stringify(frameData),
