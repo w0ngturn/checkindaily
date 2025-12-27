@@ -30,7 +30,8 @@ export default function Home() {
 
         if (sdk && sdk.actions?.ready) {
           try {
-            await sdk.actions.ready()
+            // Fire and forget - don't await
+            sdk.actions.ready?.().catch(() => console.log("[v0] Ready action failed"))
           } catch (e) {
             console.log("[v0] Ready action failed")
           }
@@ -40,7 +41,7 @@ export default function Home() {
           try {
             const context = await Promise.race([
               Promise.resolve(sdk.context),
-              new Promise((_, reject) => setTimeout(() => reject(new Error("Context timeout")), 4000)),
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Context timeout")), 2000)),
             ])
 
             if (context?.user?.fid) {
@@ -59,7 +60,7 @@ export default function Home() {
       } catch (err) {
         console.log("[v0] Initialization error:", err)
       } finally {
-        setTimeout(() => setShowSplash(false), 500)
+        setShowSplash(false)
       }
     }
 
