@@ -1,8 +1,17 @@
 import { ImageResponse } from "next/og"
+import type { NextRequest } from "next/server"
 
 export const runtime = "edge"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+
+  const streak = searchParams.get("streak")
+  const points = searchParams.get("points")
+  const tier = searchParams.get("tier")
+
+  const isShareImage = streak && points && tier
+
   return new ImageResponse(
     <div
       style={{
@@ -58,57 +67,100 @@ export async function GET() {
         CHECKIN
       </div>
 
-      {/* Tagline */}
-      <div
-        style={{
-          display: "flex",
-          fontSize: "32px",
-          color: "#94a3b8",
-          textAlign: "center",
-          marginBottom: "40px",
-        }}
-      >
-        Check in daily. Build streaks. Get rewarded.
-      </div>
+      {isShareImage ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "16px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              fontSize: "48px",
+              color: "#06b6d4",
+              fontWeight: "bold",
+            }}
+          >
+            🔥 {streak}-Day Streak!
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: "28px",
+              color: "#94a3b8",
+            }}
+          >
+            {points} Points • {tier.charAt(0).toUpperCase() + tier.slice(1)} Tier
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: "24px",
+              color: "#64748b",
+              marginTop: "20px",
+            }}
+          >
+            Join me and start building your streak!
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Default tagline */}
+          <div
+            style={{
+              display: "flex",
+              fontSize: "32px",
+              color: "#94a3b8",
+              textAlign: "center",
+              marginBottom: "40px",
+            }}
+          >
+            Check in daily. Build streaks. Get rewarded.
+          </div>
 
-      {/* Stats */}
-      <div
-        style={{
-          display: "flex",
-          gap: "60px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ fontSize: "48px", color: "#06b6d4", fontWeight: "bold" }}>🔥</div>
-          <div style={{ fontSize: "20px", color: "#64748b" }}>Daily Streaks</div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ fontSize: "48px", color: "#06b6d4", fontWeight: "bold" }}>⭐</div>
-          <div style={{ fontSize: "20px", color: "#64748b" }}>Earn Points</div>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ fontSize: "48px", color: "#06b6d4", fontWeight: "bold" }}>🏆</div>
-          <div style={{ fontSize: "20px", color: "#64748b" }}>Climb Tiers</div>
-        </div>
-      </div>
+          {/* Stats */}
+          <div
+            style={{
+              display: "flex",
+              gap: "60px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ fontSize: "48px", color: "#06b6d4", fontWeight: "bold" }}>🔥</div>
+              <div style={{ fontSize: "20px", color: "#64748b" }}>Daily Streaks</div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ fontSize: "48px", color: "#06b6d4", fontWeight: "bold" }}>⭐</div>
+              <div style={{ fontSize: "20px", color: "#64748b" }}>Earn Points</div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ fontSize: "48px", color: "#06b6d4", fontWeight: "bold" }}>🏆</div>
+              <div style={{ fontSize: "20px", color: "#64748b" }}>Climb Tiers</div>
+            </div>
+          </div>
+        </>
+      )}
     </div>,
     {
       width: 1200,
