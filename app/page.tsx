@@ -35,17 +35,19 @@ export default function Home() {
           return
         }
 
-        // Mark app as ready
         if (sdk.actions?.ready) {
-          try {
-            await sdk.actions.ready()
-          } catch (e) {
-            console.log("[v0] Ready action failed:", e)
-          }
+          sdk.actions.ready().catch(() => {
+            console.log("[v0] Ready action failed")
+          })
         }
 
+        const contextPromise = Promise.race([
+          Promise.resolve(sdk.context),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Context timeout")), 2000)),
+        ])
+
         try {
-          const context = await Promise.resolve(sdk.context)
+          const context = await contextPromise
           if (context?.user?.fid) {
             setUserFid(context.user.fid)
             setUserData({
@@ -56,7 +58,7 @@ export default function Home() {
             })
           }
         } catch (e) {
-          console.log("[v0] Context access failed:", e)
+          console.log("[v0] Context access failed or timed out:", e)
         }
 
         setAppReady(true)
