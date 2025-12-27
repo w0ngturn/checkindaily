@@ -140,7 +140,7 @@ export default function Dashboard() {
                   {users.map((user) => (
                     <tr key={user.fid} className="border-b border-blue-700 hover:bg-blue-900/50 transition-colors">
                       <td className="py-3 px-3 text-foreground">{user.fid}</td>
-                      <td className="py-3 px-3 text-cyan-400 font-semibold">@{user.username}</td>
+                      <td className="py-3 px-3 text-cyan-400 font-semibold">{user.username}</td>
                       <td className="py-3 px-3">
                         <span className="inline-flex items-center gap-1 rounded-full bg-blue-900 px-2 py-1 text-xs font-semibold">
                           🔥 {user.streak_count}
