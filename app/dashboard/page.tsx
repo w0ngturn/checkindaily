@@ -1,6 +1,3 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 
 interface DashboardStats {
@@ -20,57 +17,44 @@ interface UserData {
   tier: string
 }
 
-export default function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [users, setUsers] = useState<UserData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState(new Date())
+interface UserProfile {
+  username: string
+  pfp: string | null
+  displayName: string | null
+}
 
-  const fetchStats = async () => {
-    try {
-      const response = await fetch("/api/dashboard/stats")
-      const data = await response.json()
-      setStats(data)
-      setLastUpdated(new Date())
-    } catch (error) {
-      console.error("Failed to fetch stats:", error)
-    }
-  }
+async function getDashboardData() {
+  try {
+    const statsRes = await fetch("http://localhost:3000/api/dashboard/stats", {
+      cache: "no-store",
+    })
+    const stats = await statsRes.json()
 
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch("/api/dashboard/users")
-      const data = await response.json()
-      setUsers(data.users || [])
-    } catch (error) {
-      console.error("Failed to fetch users:", error)
-    }
-  }
+    const usersRes = await fetch("http://localhost:3000/api/dashboard/users", {
+      cache: "no-store",
+    })
+    const usersData = await usersRes.json()
+    const users = usersData.users || []
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true)
-      await Promise.all([fetchStats(), fetchUsers()])
-      setLoading(false)
+    const fids = users.map((u: UserData) => u.fid)
+    let profiles: Record<number, UserProfile> = {}
+
+    if (fids.length > 0) {
+      const profilesRes = await fetch(`http://localhost:3000/api/users?fids=${fids.join(",")}`, {
+        cache: "no-store",
+      })
+      profiles = await profilesRes.json()
     }
 
-    loadData()
-    const interval = setInterval(loadData, 10000)
-    return () => clearInterval(interval)
-  }, [])
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-background text-foreground p-4 sm:p-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center py-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent" />
-            <p className="mt-4 text-muted">Loading dashboard...</p>
-          </div>
-        </div>
-      </main>
-    )
+    return { stats, users, profiles }
+  } catch (error) {
+    console.error("[v0] Dashboard data fetch error:", error)
+    return { stats: null, users: [], profiles: {} }
   }
+}
+
+export default async function Dashboard() {
+  const { stats, users, profiles } = await getDashboardData()
 
   return (
     <main className="min-h-screen bg-background text-foreground p-4 sm:p-8">
@@ -78,7 +62,7 @@ export default function Dashboard() {
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Production Dashboard</h1>
           <p className="text-muted mt-2">Real-time CHECKIN mini app statistics</p>
-          <p className="text-xs text-muted mt-1">Last updated: {lastUpdated.toLocaleTimeString()}</p>
+          <p className="text-xs text-muted mt-1">Last updated: {new Date().toLocaleTimeString()}</p>
         </div>
 
         {stats && (
@@ -137,24 +121,53 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
-                    <tr key={user.fid} className="border-b border-blue-700 hover:bg-blue-900/50 transition-colors">
-                      <td className="py-3 px-3 text-foreground">{user.fid}</td>
-                      <td className="py-3 px-3 text-cyan-400 font-semibold">{user.username}</td>
-                      <td className="py-3 px-3">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-900 px-2 py-1 text-xs font-semibold">
-                          🔥 {user.streak_count}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-foreground">{user.total_checkins}</td>
-                      <td className="py-3 px-3 text-yellow-400 font-semibold">{user.total_points}</td>
-                      <td className="py-3 px-3">
-                        <span className="inline-flex items-center rounded-full bg-cyan-400/20 px-2 py-1 text-xs font-semibold text-cyan-400">
-                          {user.tier}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {users.map((user: UserData) => {
+                    const profile = profiles[user.fid]
+                    const username = profile?.username || `@fid_${user.fid}`
+
+                    return (
+                      <tr key={user.fid} className="border-b border-blue-700 hover:bg-blue-900/50 transition-colors">
+                        <td className="py-3 px-3 text-foreground">{user.fid}</td>
+                        <td className="py-3 px-3 text-cyan-400 font-semibold">
+                          <div className="flex items-center gap-2">
+                            {profile?.pfp && (
+                              <img
+                                src={profile.pfp || "/placeholder.svg"}
+                                alt={username}
+                                className="w-6 h-6 rounded-full"
+                                onError={(e) => {
+                                  ;(e.target as HTMLImageElement).src = "/avatar.png"
+                                }}
+                              />
+                            )}
+                            {!profile?.pfp && (
+                              <img src="/avatar.png" alt="default avatar" className="w-6 h-6 rounded-full" />
+                            )}
+                            <a
+                              href={`https://warpcast.com/${profile?.username || `u_${user.fid}`}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline"
+                            >
+                              @{username}
+                            </a>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-900 px-2 py-1 text-xs font-semibold">
+                            🔥 {user.streak_count}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-foreground">{user.total_checkins}</td>
+                        <td className="py-3 px-3 text-yellow-400 font-semibold">{user.total_points}</td>
+                        <td className="py-3 px-3">
+                          <span className="inline-flex items-center rounded-full bg-cyan-400/20 px-2 py-1 text-xs font-semibold text-cyan-400">
+                            {user.tier}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
