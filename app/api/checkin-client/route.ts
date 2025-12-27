@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { processCheckin } from "@/lib/checkin-service"
+import { getFarcasterUsername } from "@/lib/farcaster-username"
 
 async function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -34,9 +35,17 @@ export async function POST(req: Request) {
       updated_at: new Date().toISOString(),
     }
 
+    let realUsername = username
+    if (!realUsername || realUsername === "User" || realUsername === "unknown") {
+      const neynarUsername = await getFarcasterUsername(Number(fid))
+      if (neynarUsername) {
+        realUsername = neynarUsername
+      }
+    }
+
     // Only update fields if they're provided and not empty
-    if (username && username !== "User" && username !== "unknown") {
-      userUpdateData.username = username
+    if (realUsername && realUsername !== "User" && realUsername !== "unknown") {
+      userUpdateData.username = realUsername
     }
     if (displayName && displayName !== "User" && displayName !== "unknown") {
       userUpdateData.display_name = displayName
