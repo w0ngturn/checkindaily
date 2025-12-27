@@ -25,12 +25,14 @@ interface UserProfile {
 
 async function getDashboardData() {
   try {
-    const statsRes = await fetch("http://localhost:3000/api/dashboard/stats", {
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"
+
+    const statsRes = await fetch(`${baseUrl}/api/dashboard/stats`, {
       cache: "no-store",
     })
     const stats = await statsRes.json()
 
-    const usersRes = await fetch("http://localhost:3000/api/dashboard/users", {
+    const usersRes = await fetch(`${baseUrl}/api/dashboard/users`, {
       cache: "no-store",
     })
     const usersData = await usersRes.json()
@@ -40,7 +42,7 @@ async function getDashboardData() {
     let profiles: Record<number, UserProfile> = {}
 
     if (fids.length > 0) {
-      const profilesRes = await fetch(`http://localhost:3000/api/users?fids=${fids.join(",")}`, {
+      const profilesRes = await fetch(`${baseUrl}/api/users?fids=${fids.join(",")}`, {
         cache: "no-store",
       })
       profiles = await profilesRes.json()
