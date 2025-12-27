@@ -10,6 +10,14 @@ export interface UserCheckin {
   totalCheckins: number
 }
 
+export interface UserProfileData {
+  username?: string
+  displayName?: string
+  pfpUrl?: string
+  verifiedAddress?: string
+  custodyAddress?: string
+}
+
 export async function getUserCheckin(fid: number): Promise<UserCheckin | null> {
   const supabase = await createSupabaseServerClient()
 
@@ -31,6 +39,7 @@ export async function getUserCheckin(fid: number): Promise<UserCheckin | null> {
 
 export async function processCheckin(
   fid: number,
+  profileData?: UserProfileData,
 ): Promise<{ streak: number; alreadyCheckedIn: boolean; pointsEarned?: number; tier?: string }> {
   const supabase = await createSupabaseServerClient()
 
@@ -55,15 +64,22 @@ export async function processCheckin(
       newStreak = 1
     }
 
-    const { error } = await supabase
-      .from("users_checkins")
-      .update({
-        last_checkin: now.toISOString(),
-        streak_count: newStreak,
-        total_checkins: user.totalCheckins + 1,
-        updated_at: now.toISOString(),
-      })
-      .eq("fid", fid)
+    const updateData: any = {
+      last_checkin: now.toISOString(),
+      last_seen: now.toISOString(),
+      streak_count: newStreak,
+      total_checkins: user.totalCheckins + 1,
+      updated_at: now.toISOString(),
+    }
+
+    // Add profile data if provided
+    if (profileData?.username) updateData.username = profileData.username
+    if (profileData?.displayName) updateData.display_name = profileData.displayName
+    if (profileData?.pfpUrl) updateData.pfp_url = profileData.pfpUrl
+    if (profileData?.verifiedAddress) updateData.verified_address = profileData.verifiedAddress
+    if (profileData?.custodyAddress) updateData.custody_address = profileData.custodyAddress
+
+    const { error } = await supabase.from("users_checkins").update(updateData).eq("fid", fid)
 
     if (!error) {
       const { pointsEarned, tier } = await calculateRewards(fid, newStreak)
@@ -85,13 +101,24 @@ export async function processCheckin(
     return { streak: newStreak, alreadyCheckedIn: false }
   }
 
-  // New user first check-in
-  const { error } = await supabase.from("users_checkins").insert({
+  const insertData: any = {
     fid,
     last_checkin: now.toISOString(),
+    last_seen: now.toISOString(),
     streak_count: 1,
     total_checkins: 1,
-  })
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
+  }
+
+  // Add profile data if provided
+  if (profileData?.username) insertData.username = profileData.username
+  if (profileData?.displayName) insertData.display_name = profileData.displayName
+  if (profileData?.pfpUrl) insertData.pfp_url = profileData.pfpUrl
+  if (profileData?.verifiedAddress) insertData.verified_address = profileData.verifiedAddress
+  if (profileData?.custodyAddress) insertData.custody_address = profileData.custodyAddress
+
+  const { error } = await supabase.from("users_checkins").insert(insertData)
 
   if (!error) {
     const { pointsEarned, tier } = await calculateRewards(fid, 1)
