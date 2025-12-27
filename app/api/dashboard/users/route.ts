@@ -19,7 +19,7 @@ export async function GET() {
     // Get active users with their stats
     const { data: users } = await supabase
       .from("users_checkins")
-      .select("fid, username, streak_count, total_checkins")
+      .select("fid, username, display_name, streak_count, total_checkins")
       .order("streak_count", { ascending: false })
       .limit(50)
 
@@ -33,14 +33,23 @@ export async function GET() {
 
     const rewardsMap = new Map(rewards?.map((r: any) => [r.fid, r]) || [])
 
-    const flatUsers = users.map((user: any) => ({
-      fid: user.fid,
-      username: user.username || "unknown",
-      streak_count: user.streak_count || 0,
-      total_checkins: user.total_checkins || 0,
-      total_points: rewardsMap.get(user.fid)?.total_points || 0,
-      tier: rewardsMap.get(user.fid)?.tier || "bronze",
-    }))
+    const flatUsers = users.map((user: any) => {
+      const displayName = user.display_name || user.username || "unknown"
+      console.log("[v0] User data:", {
+        fid: user.fid,
+        username: user.username,
+        display_name: user.display_name,
+        final: displayName,
+      })
+      return {
+        fid: user.fid,
+        username: displayName,
+        streak_count: user.streak_count || 0,
+        total_checkins: user.total_checkins || 0,
+        total_points: rewardsMap.get(user.fid)?.total_points || 0,
+        tier: rewardsMap.get(user.fid)?.tier || "bronze",
+      }
+    })
 
     return Response.json({ users: flatUsers })
   } catch (error) {
