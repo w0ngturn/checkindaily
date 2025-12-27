@@ -29,19 +29,39 @@ export async function POST(req: Request) {
 
     const supabase = await getSupabaseClient()
 
-    // Update user info if provided
-    if (username || displayName || pfpUrl) {
-      await supabase.from("users_checkins").upsert(
-        {
-          fid,
-          username: username || null,
-          display_name: displayName || null,
-          pfp_url: pfpUrl || null,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "fid" },
-      )
+    const userUpdateData: any = {
+      fid,
+      updated_at: new Date().toISOString(),
     }
+
+    // Only update fields if they're provided and not empty
+    if (username && username !== "User" && username !== "unknown") {
+      userUpdateData.username = username
+    }
+    if (displayName && displayName !== "User" && displayName !== "unknown") {
+      userUpdateData.display_name = displayName
+    }
+    if (pfpUrl && pfpUrl !== "null") {
+      userUpdateData.pfp_url = pfpUrl
+    }
+
+    // Check if user exists first to preserve existing data
+    const { data: existingUser } = await supabase
+      .from("users_checkins")
+      .select("username, display_name, pfp_url")
+      .eq("fid", fid)
+      .single()
+
+    // Merge with existing data if user exists
+    if (existingUser) {
+      userUpdateData.username = userUpdateData.username || existingUser.username
+      userUpdateData.display_name = userUpdateData.display_name || existingUser.display_name
+      userUpdateData.pfp_url = userUpdateData.pfp_url || existingUser.pfp_url
+    }
+
+    console.log("[v0] Updating user with data:", userUpdateData)
+
+    await supabase.from("users_checkins").upsert(userUpdateData, { onConflict: "fid" })
 
     const result = await processCheckin(fid)
 

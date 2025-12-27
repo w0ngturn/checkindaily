@@ -34,13 +34,22 @@ export async function GET() {
     const rewardsMap = new Map(rewards?.map((r: any) => [r.fid, r]) || [])
 
     const flatUsers = users.map((user: any) => {
-      const displayName = user.display_name || user.username || "unknown"
-      console.log("[v0] User data:", {
+      let displayName = "unknown"
+      if (user.display_name && user.display_name !== "unknown") {
+        displayName = user.display_name
+      } else if (user.username && user.username !== "unknown") {
+        displayName = user.username
+      } else {
+        displayName = `@fid_${user.fid}`
+      }
+
+      console.log("[v0] Dashboard user:", {
         fid: user.fid,
         username: user.username,
         display_name: user.display_name,
         final: displayName,
       })
+
       return {
         fid: user.fid,
         username: displayName,
