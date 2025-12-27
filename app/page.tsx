@@ -8,6 +8,7 @@ import { AnalyticsPanel } from "@/components/analytics-panel"
 import { Leaderboard } from "@/components/leaderboard"
 import { BottomNav } from "@/components/bottom-nav"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
+import Roadmap from "@/components/roadmap"
 
 export default function Home() {
   const [loading, setLoading] = useState(false)
@@ -239,41 +240,7 @@ export default function Home() {
 
           {activeTab === "roadmap" && (
             <section className="mt-4">
-              <h2 className="mb-4 text-lg font-bold text-foreground">Roadmap</h2>
-              <div className="space-y-3">
-                {[
-                  { phase: "Phase 1", desc: "Brand, site, social launch", status: "completed" },
-                  { phase: "Phase 2", desc: "Check-in engine + streaks", status: "current" },
-                  { phase: "Phase 3", desc: "Rewards & partnerships", status: "upcoming" },
-                  { phase: "Phase 4", desc: "DAO & integrations", status: "upcoming" },
-                ].map((item) => (
-                  <div
-                    key={item.phase}
-                    className={`rounded-2xl border p-4 shadow-xl ${
-                      item.status === "current"
-                        ? "border-cyan-400 bg-gradient-to-b from-blue-900 to-blue-950"
-                        : "border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <strong className="text-sm text-foreground">{item.phase}</strong>
-                        <p className="mt-1 text-xs text-muted">{item.desc}</p>
-                      </div>
-                      {item.status === "completed" && (
-                        <span className="rounded-full bg-green-500/20 px-2 py-1 text-xs font-semibold text-green-400">
-                          Done
-                        </span>
-                      )}
-                      {item.status === "current" && (
-                        <span className="rounded-full bg-cyan-400/20 px-2 py-1 text-xs font-semibold text-cyan-400">
-                          Current
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Roadmap />
             </section>
           )}
         </div>

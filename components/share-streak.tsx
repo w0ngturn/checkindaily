@@ -17,8 +17,8 @@ export function ShareStreak({ fid, streakCount, totalPoints, tier }: ShareStreak
     try {
       setSharing(true)
       const shareText = `I'm on a ${streakCount}-day streak on CHECKIN! 🔥 Earned ${totalPoints} points at ${tier} tier. Join me and start building your streak!`
-      const miniAppUrl = `https://checkindaily.xyz/`
-      const composeUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText + "\n\n" + miniAppUrl)}`
+      const miniAppUrl = `https://checkindaily.xyz`
+      const composeUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(miniAppUrl)}`
 
       try {
         const module = await import("@farcaster/miniapp-sdk")
