@@ -122,34 +122,28 @@ export default async function Dashboard() {
                 </thead>
                 <tbody>
                   {users.map((user: UserData) => {
-                    const profile = profiles[user.fid]
-                    const username = profile?.username || `@fid_${user.fid}`
+                    const profile = profiles?.[user.fid]
 
                     return (
                       <tr key={user.fid} className="border-b border-blue-700 hover:bg-blue-900/50 transition-colors">
                         <td className="py-3 px-3 text-foreground">{user.fid}</td>
                         <td className="py-3 px-3 text-cyan-400 font-semibold">
                           <div className="flex items-center gap-2">
-                            {profile?.pfp && (
-                              <img
-                                src={profile.pfp || "/placeholder.svg"}
-                                alt={username}
-                                className="w-6 h-6 rounded-full"
-                                onError={(e) => {
-                                  ;(e.target as HTMLImageElement).src = "/avatar.png"
-                                }}
-                              />
-                            )}
-                            {!profile?.pfp && (
-                              <img src="/avatar.png" alt="default avatar" className="w-6 h-6 rounded-full" />
-                            )}
+                            <img
+                              src={profile?.pfp ?? "/avatar.png"}
+                              alt={`${profile?.username || `fid_${user.fid}`}`}
+                              className="w-6 h-6 rounded-full"
+                              onError={(e) => {
+                                ;(e.target as HTMLImageElement).src = "/avatar.png"
+                              }}
+                            />
                             <a
-                              href={`https://warpcast.com/${profile?.username || `u_${user.fid}`}`}
+                              href={profile?.username ? `https://warpcast.com/${profile.username}` : "#"}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="hover:underline"
                             >
-                              @{username}
+                              @{profile?.username ?? `fid_${user.fid}`}
                             </a>
                           </div>
                         </td>
