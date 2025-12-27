@@ -1,7 +1,35 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { processCheckin } from "@/lib/checkin-service"
-import { getFarcasterUsername } from "@/lib/farcaster-username"
+
+async function getFarcasterUserData(fid: number) {
+  try {
+    const res = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`, {
+      headers: {
+        accept: "application/json",
+        api_key: process.env.NEYNAR_API_KEY as string,
+      },
+    })
+
+    if (!res.ok) return null
+
+    const json = await res.json()
+    const user = json.users?.[0]
+
+    if (!user) return null
+
+    return {
+      username: user.username,
+      displayName: user.display_name,
+      pfpUrl: user.pfp_url,
+      verifiedAddress: user.verified_addresses?.eth_addresses?.[0] ?? null,
+      custodyAddress: user.custody_address ?? null,
+    }
+  } catch (error) {
+    console.error("[v0] Error fetching Farcaster user data:", error)
+    return null
+  }
+}
 
 async function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -30,34 +58,39 @@ export async function POST(req: Request) {
 
     const supabase = await getSupabaseClient()
 
+    const farcasterData = await getFarcasterUserData(Number(fid))
+
     const userUpdateData: any = {
       fid,
       updated_at: new Date().toISOString(),
     }
 
-    let realUsername = username
-    if (!realUsername || realUsername === "User" || realUsername === "unknown") {
-      const neynarUsername = await getFarcasterUsername(Number(fid))
-      if (neynarUsername) {
-        realUsername = neynarUsername
-      }
-    }
+    // Use Neynar data if available, otherwise fall back to provided data
+    const realUsername = farcasterData?.username || username
+    const realDisplayName = farcasterData?.displayName || displayName
+    const realPfpUrl = farcasterData?.pfpUrl || pfpUrl
 
-    // Only update fields if they're provided and not empty
     if (realUsername && realUsername !== "User" && realUsername !== "unknown") {
       userUpdateData.username = realUsername
     }
-    if (displayName && displayName !== "User" && displayName !== "unknown") {
-      userUpdateData.display_name = displayName
+    if (realDisplayName && realDisplayName !== "User" && realDisplayName !== "unknown") {
+      userUpdateData.display_name = realDisplayName
     }
-    if (pfpUrl && pfpUrl !== "null") {
-      userUpdateData.pfp_url = pfpUrl
+    if (realPfpUrl && realPfpUrl !== "null") {
+      userUpdateData.pfp_url = realPfpUrl
+    }
+
+    if (farcasterData?.verifiedAddress) {
+      userUpdateData.verified_address = farcasterData.verifiedAddress
+    }
+    if (farcasterData?.custodyAddress) {
+      userUpdateData.custody_address = farcasterData.custodyAddress
     }
 
     // Check if user exists first to preserve existing data
     const { data: existingUser } = await supabase
       .from("users_checkins")
-      .select("username, display_name, pfp_url")
+      .select("username, display_name, pfp_url, verified_address, custody_address")
       .eq("fid", fid)
       .single()
 
@@ -66,15 +99,13 @@ export async function POST(req: Request) {
       userUpdateData.username = userUpdateData.username || existingUser.username
       userUpdateData.display_name = userUpdateData.display_name || existingUser.display_name
       userUpdateData.pfp_url = userUpdateData.pfp_url || existingUser.pfp_url
+      userUpdateData.verified_address = userUpdateData.verified_address || existingUser.verified_address
+      userUpdateData.custody_address = userUpdateData.custody_address || existingUser.custody_address
     }
-
-    console.log("[v0] Updating user with data:", userUpdateData)
 
     await supabase.from("users_checkins").upsert(userUpdateData, { onConflict: "fid" })
 
     const result = await processCheckin(fid)
-
-    console.log("[v0] Check-in result for FID", fid, ":", result)
 
     if (result.alreadyCheckedIn) {
       return NextResponse.json(

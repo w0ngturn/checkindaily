@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server"
 
-export const runtime = "nodejs" // Added explicit runtime for external API calls
+export const runtime = "nodejs"
 
 type NeynarUser = {
   fid: number
   username: string
   display_name?: string
   pfp_url?: string
+  verified_addresses?: {
+    eth_addresses?: string[]
+    sol_addresses?: string[]
+  }
 }
 
 export async function GET(req: Request) {
@@ -47,12 +51,24 @@ export async function GET(req: Request) {
 
     const json = await neynarRes.json()
 
-    const usersByFid: Record<number, { username: string; pfp: string | null; displayName: string | null }> = {}
+    const usersByFid: Record<
+      number,
+      {
+        username: string
+        pfp: string | null
+        displayName: string | null
+        verifiedAddress: string | null
+      }
+    > = {}
     ;(json.users as NeynarUser[]).forEach((u) => {
+      // Get primary ETH wallet (first verified address)
+      const primaryWallet = u.verified_addresses?.eth_addresses?.[0] ?? null
+
       usersByFid[u.fid] = {
         username: u.username,
         pfp: u.pfp_url ?? null,
         displayName: u.display_name ?? null,
+        verifiedAddress: primaryWallet,
       }
     })
 
