@@ -36,12 +36,9 @@ async function getDashboardData() {
       cache: "no-store",
     })
     const usersData = await usersRes.json()
-    console.log("[v0] Dashboard users response:", usersData)
     const users = usersData.users || []
-    console.log("[v0] Users array:", users)
 
     const fids = users.map((u: UserData) => u.fid)
-    console.log("[v0] FIDs extracted:", fids)
     let profiles: Record<number, UserProfile> = {}
 
     if (fids.length > 0) {
@@ -49,7 +46,6 @@ async function getDashboardData() {
         cache: "no-store",
       })
       profiles = await profilesRes.json()
-      console.log("[v0] Profiles fetched:", profiles)
     }
 
     return { stats, users, profiles }
@@ -127,47 +123,55 @@ export default async function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user: UserData) => {
-                    const profile = profiles?.[user.fid]
+                  {users.length > 0 ? (
+                    users.map((user: UserData) => {
+                      const profile = profiles?.[user.fid]
 
-                    return (
-                      <tr key={user.fid} className="border-b border-blue-700 hover:bg-blue-900/50 transition-colors">
-                        <td className="py-3 px-3 text-foreground">{user.fid}</td>
-                        <td className="py-3 px-3 text-cyan-400 font-semibold">
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={profile?.pfp ?? "/avatar.png"}
-                              alt={`${profile?.username || `fid_${user.fid}`}`}
-                              className="w-6 h-6 rounded-full"
-                              onError={(e) => {
-                                ;(e.target as HTMLImageElement).src = "/avatar.png"
-                              }}
-                            />
-                            <a
-                              href={profile?.username ? `https://warpcast.com/${profile.username}` : "#"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:underline"
-                            >
-                              @{profile?.username ?? `fid_${user.fid}`}
-                            </a>
-                          </div>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-900 px-2 py-1 text-xs font-semibold">
-                            🔥 {user.streak_count}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-foreground">{user.total_checkins}</td>
-                        <td className="py-3 px-3 text-yellow-400 font-semibold">{user.total_points}</td>
-                        <td className="py-3 px-3">
-                          <span className="inline-flex items-center rounded-full bg-cyan-400/20 px-2 py-1 text-xs font-semibold text-cyan-400">
-                            {user.tier}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                      return (
+                        <tr key={user.fid} className="border-b border-blue-700 hover:bg-blue-900/50 transition-colors">
+                          <td className="py-3 px-3 text-foreground">{user.fid}</td>
+                          <td className="py-3 px-3 text-cyan-400 font-semibold">
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={profile?.pfp ?? "/avatar.png"}
+                                alt={`${profile?.username || `fid_${user.fid}`}`}
+                                className="w-6 h-6 rounded-full"
+                                onError={(e) => {
+                                  ;(e.target as HTMLImageElement).src = "/avatar.png"
+                                }}
+                              />
+                              <a
+                                href={profile?.username ? `https://warpcast.com/${profile.username}` : "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline"
+                              >
+                                @{profile?.username ?? `fid_${user.fid}`}
+                              </a>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-900 px-2 py-1 text-xs font-semibold">
+                              🔥 {user.streak_count}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-foreground">{user.total_checkins}</td>
+                          <td className="py-3 px-3 text-yellow-400 font-semibold">{user.total_points}</td>
+                          <td className="py-3 px-3">
+                            <span className="inline-flex items-center rounded-full bg-cyan-400/20 px-2 py-1 text-xs font-semibold text-cyan-400">
+                              {user.tier}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 px-3 text-center text-muted">
+                        No active users yet
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

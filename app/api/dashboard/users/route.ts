@@ -16,16 +16,22 @@ export async function GET() {
       },
     )
 
-    // Get active users with their stats
     const { data: users, error: usersError } = await supabase
       .from("users_checkins")
       .select("fid, username, display_name, streak_count, total_checkins")
       .order("streak_count", { ascending: false })
       .limit(50)
 
+    if (usersError) {
+      console.error("[v0] Users query error:", usersError)
+    }
+
     if (!users || users.length === 0) {
+      console.log("[v0] No users found in database")
       return Response.json({ users: [] })
     }
+
+    console.log("[v0] Found users:", users.length)
 
     // Get rewards data for these users
     const fids = users.map((u: any) => u.fid)
@@ -33,6 +39,10 @@ export async function GET() {
       .from("user_rewards")
       .select("fid, total_points, tier")
       .in("fid", fids)
+
+    if (rewardsError) {
+      console.error("[v0] Rewards query error:", rewardsError)
+    }
 
     const rewardsMap = new Map(rewards?.map((r: any) => [r.fid, r]) || [])
 
@@ -45,6 +55,7 @@ export async function GET() {
       tier: rewardsMap.get(user.fid)?.tier || "bronze",
     }))
 
+    console.log("[v0] Returning flattened users:", flatUsers.length)
     return Response.json({ users: flatUsers })
   } catch (error) {
     console.error("[v0] Dashboard users error:", error)
