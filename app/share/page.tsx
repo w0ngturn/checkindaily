@@ -5,6 +5,7 @@ type Props = {
 }
 
 const OG_IMAGE_URL = "https://checkindaily.xyz/images/check-20in-20daily.png"
+const SPLASH_IMAGE_URL = "https://checkindaily.xyz/images/checkin-logo.png"
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = await searchParams
@@ -25,8 +26,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
         type: "launch_miniapp",
         url: "https://checkindaily.xyz/",
         name: "CHECKIN",
-        splashImageUrl: "https://checkindaily.xyz/images/check-20in-20daily.png",
-        splashBackgroundColor: "#050b1f",
+        splashImageUrl: SPLASH_IMAGE_URL,
+        splashBackgroundColor: "#0a0f1a",
       },
     },
   }

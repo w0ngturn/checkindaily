@@ -67,6 +67,7 @@ export const metadata: Metadata = {
 
 function FrameMetadata() {
   const OG_IMAGE_URL = "https://checkindaily.xyz/images/check-20in-20daily.png"
+  const SPLASH_IMAGE_URL = "https://checkindaily.xyz/images/checkin-logo.png"
 
   const frameData = {
     version: "1",
@@ -77,8 +78,8 @@ function FrameMetadata() {
         type: "launch_miniapp",
         url: "https://checkindaily.xyz/",
         name: "CHECKIN",
-        splashImageUrl: "https://checkindaily.xyz/images/check-20in-20daily.png",
-        splashBackgroundColor: "#050b1f",
+        splashImageUrl: SPLASH_IMAGE_URL,
+        splashBackgroundColor: "#0a0f1a",
       },
     },
   }
