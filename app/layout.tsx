@@ -36,34 +36,6 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    "fc:miniapp": JSON.stringify({
-      version: "1",
-      imageUrl: "https://checkindaily.xyz/api/og",
-      button: {
-        title: "Start Checking In",
-        action: {
-          type: "launch_miniapp",
-          url: "https://checkindaily.xyz/",
-          name: "CHECKIN",
-          splashImageUrl: "https://checkindaily.xyz/og.jpg",
-          splashBackgroundColor: "#050b1f",
-        },
-      },
-    }),
-    "fc:frame": JSON.stringify({
-      version: "1",
-      imageUrl: "https://checkindaily.xyz/api/og",
-      button: {
-        title: "Start Checking In",
-        action: {
-          type: "launch_miniapp",
-          url: "https://checkindaily.xyz/",
-          name: "CHECKIN",
-          splashImageUrl: "https://checkindaily.xyz/og.jpg",
-          splashBackgroundColor: "#050b1f",
-        },
-      },
-    }),
     "og:image": "https://checkindaily.xyz/api/og",
     "og:image:width": "1200",
     "og:image:height": "630",
@@ -93,6 +65,30 @@ export const metadata: Metadata = {
   },
 }
 
+function FrameMetadata() {
+  const frameData = {
+    version: "1",
+    imageUrl: "https://checkindaily.xyz/api/og",
+    button: {
+      title: "Start Checking In",
+      action: {
+        type: "launch_miniapp",
+        url: "https://checkindaily.xyz/",
+        name: "CHECKIN",
+        splashImageUrl: "https://checkindaily.xyz/og.jpg",
+        splashBackgroundColor: "#050b1f",
+      },
+    },
+  }
+
+  return (
+    <>
+      <meta name="fc:frame" content={JSON.stringify(frameData)} />
+      <meta name="fc:miniapp" content={JSON.stringify(frameData)} />
+    </>
+  )
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -100,6 +96,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <FrameMetadata />
+      </head>
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />
