@@ -35,13 +35,13 @@ export default function Roadmap() {
     {
       phase: "Phase 2",
       title: "Core Product",
-      status: "in-progress",
+      status: "completed",
       description: "Check-in engine development with streak tracking and user analytics.",
       items: [
         { title: "Check-in Engine", completed: true },
         { title: "Streak Tracking", completed: true },
         { title: "User Dashboard", completed: true },
-        { title: "Leaderboard System", completed: false },
+        { title: "Leaderboard System", completed: true },
       ],
     },
     {
