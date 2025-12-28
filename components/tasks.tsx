@@ -22,6 +22,7 @@ export function Tasks({ fid }: TasksProps) {
   const [claiming, setClaiming] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [sdkReady, setSdkReady] = useState(false)
 
   const TASKS = [
     {
@@ -34,6 +35,20 @@ export function Tasks({ fid }: TasksProps) {
       link: "https://warpcast.com/checkinxyz",
     },
   ]
+
+  useEffect(() => {
+    const initSdk = async () => {
+      try {
+        const context = await sdk.context
+        if (context) {
+          setSdkReady(true)
+        }
+      } catch (err) {
+        console.error("SDK init failed:", err)
+      }
+    }
+    initSdk()
+  }, [])
 
   useEffect(() => {
     if (fid) {
@@ -139,9 +154,14 @@ export function Tasks({ fid }: TasksProps) {
 
   const handleOpenInFarcaster = async (url: string) => {
     try {
-      await sdk.actions.openUrl({ url })
+      if (sdkReady) {
+        await sdk.actions.openUrl({ url })
+      } else {
+        const warpcastUrl = url.replace("https://warpcast.com/", "warpcast://")
+        window.location.href = warpcastUrl
+      }
     } catch (err) {
-      // Fallback to window.open if SDK not available
+      console.error("Failed to open URL:", err)
       window.open(url, "_blank")
     }
   }
@@ -164,7 +184,6 @@ export function Tasks({ fid }: TasksProps) {
 
   return (
     <div className="space-y-4">
-      {/* Message/Error display */}
       {message && (
         <div className="rounded-xl bg-green-900/50 border border-green-500 px-4 py-3 text-sm text-green-400">
           {message}
@@ -174,7 +193,6 @@ export function Tasks({ fid }: TasksProps) {
         <div className="rounded-xl bg-red-900/50 border border-red-500 px-4 py-3 text-sm text-red-400">{error}</div>
       )}
 
-      {/* Tasks list */}
       {TASKS.map((task) => {
         const status = taskStatuses[task.id]
         const isCompleted = status?.completed
@@ -248,7 +266,6 @@ export function Tasks({ fid }: TasksProps) {
         )
       })}
 
-      {/* Info box */}
       <div className="rounded-xl border border-blue-600 bg-blue-950/50 px-4 py-3 text-center">
         <p className="text-xs text-muted">Complete tasks to earn bonus points! More tasks coming soon.</p>
       </div>

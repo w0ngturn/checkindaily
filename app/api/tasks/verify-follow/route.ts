@@ -5,7 +5,7 @@ export const runtime = "nodejs"
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-// @checkinxyz FID - you need to replace this with actual FID
+// @checkinxyz FID
 const CHECKINXYZ_FID = 1029791
 
 export async function POST(request: Request) {
@@ -39,26 +39,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Neynar API not configured" }, { status: 500 })
     }
 
-    // Check if user follows @checkinxyz
-    const response = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`, {
-      headers: {
-        accept: "application/json",
-        "x-api-key": neynarApiKey,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch user data")
-    }
-
-    const userData = await response.json()
-    const user = userData.users?.[0]
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    // Check following relationship
+    // We fetch @checkinxyz profile with viewer_fid set to the user
+    // Then check viewer_context.following which tells if viewer follows the target
     const followResponse = await fetch(
       `https://api.neynar.com/v2/farcaster/user/bulk?fids=${CHECKINXYZ_FID}&viewer_fid=${fid}`,
       {
@@ -70,12 +52,23 @@ export async function POST(request: Request) {
     )
 
     if (!followResponse.ok) {
+      const errorText = await followResponse.text()
+      console.error("Neynar API error:", errorText)
       throw new Error("Failed to verify follow status")
     }
 
     const followData = await followResponse.json()
     const targetUser = followData.users?.[0]
-    const isFollowing = targetUser?.viewer_context?.following === true
+
+    // viewer_context.followed_by = true means the target follows the viewer
+    const isFollowing = targetUser?.viewer_context?.followed_by === true
+
+    console.log("Follow check result:", {
+      userFid: fid,
+      targetFid: CHECKINXYZ_FID,
+      viewerContext: targetUser?.viewer_context,
+      isFollowing,
+    })
 
     if (isFollowing) {
       // Mark task as completed (not claimed yet)
