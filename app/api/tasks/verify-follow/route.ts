@@ -5,7 +5,6 @@ export const runtime = "nodejs"
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-// @checkinxyz username - we'll lookup FID dynamically
 const CHECKINXYZ_USERNAME = "checkinxyz"
 
 export async function POST(request: Request) {
@@ -38,7 +37,7 @@ export async function POST(request: Request) {
       })
     }
 
-    const userLookupResponse = await fetch(
+    const userResponse = await fetch(
       `https://api.neynar.com/v2/farcaster/user/by_username?username=${CHECKINXYZ_USERNAME}`,
       {
         headers: {
@@ -48,82 +47,59 @@ export async function POST(request: Request) {
       },
     )
 
-    if (!userLookupResponse.ok) {
-      const errorText = await userLookupResponse.text()
-      console.error("[v0] User lookup error:", errorText)
-      return NextResponse.json({ error: "Failed to lookup @checkinxyz" }, { status: 500 })
+    if (!userResponse.ok) {
+      return NextResponse.json({ error: "Failed to fetch @checkinxyz info" }, { status: 500 })
     }
 
-    const userLookupData = await userLookupResponse.json()
-    const checkinxyzFid = userLookupData.user?.fid
+    const userData = await userResponse.json()
+    const checkinxyzFid = userData.user?.fid
 
     if (!checkinxyzFid) {
-      console.error("[v0] @checkinxyz FID not found:", userLookupData)
       return NextResponse.json({ error: "@checkinxyz account not found" }, { status: 500 })
     }
 
-    console.log("[v0] @checkinxyz FID:", checkinxyzFid)
-
-    // Fetch the user's profile with @checkinxyz as viewer
-    // Then we can see if @checkinxyz is in the user's following list
-    // Alternative: check if user FID is in @checkinxyz's followers
-
-    // Method: Get user's following and check if @checkinxyz is in it
-    const followingResponse = await fetch(`https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=100`, {
-      headers: {
-        accept: "application/json",
-        "x-api-key": neynarApiKey,
-      },
-    })
-
-    if (!followingResponse.ok) {
-      const errorText = await followingResponse.text()
-      console.error("[v0] Following fetch error:", errorText)
-      return NextResponse.json({ error: "Failed to fetch following list" }, { status: 500 })
-    }
-
-    const followingData = await followingResponse.json()
-
-    // Check if @checkinxyz is in user's following list
+    // This checks users who follow @checkinxyz (i.e., @checkinxyz's followers)
     let isFollowing = false
-    let cursor = null
-    let checkedCount = 0
+    let cursor: string | null = null
+    let attempts = 0
+    const maxAttempts = 10 // Check up to 1000 followers (100 per page)
 
-    // Check first page
-    const followingUsers = followingData.users || []
-    isFollowing = followingUsers.some((user: any) => user.fid === checkinxyzFid)
-    checkedCount += followingUsers.length
-    cursor = followingData.next?.cursor
+    while (attempts < maxAttempts) {
+      const followersUrl = new URL(`https://api.neynar.com/v2/farcaster/followers`)
+      followersUrl.searchParams.set("fid", checkinxyzFid.toString())
+      followersUrl.searchParams.set("limit", "100")
+      if (cursor) {
+        followersUrl.searchParams.set("cursor", cursor)
+      }
 
-    console.log("[v0] First page check:", {
-      userFid: fid,
-      checkinxyzFid,
-      checkedCount,
-      isFollowing,
-      hasMore: !!cursor,
-    })
-
-    // If not found in first 100, check more pages (up to 500 total)
-    while (!isFollowing && cursor && checkedCount < 500) {
-      const nextResponse = await fetch(
-        `https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=100&cursor=${cursor}`,
-        {
-          headers: {
-            accept: "application/json",
-            "x-api-key": neynarApiKey,
-          },
+      const followersResponse = await fetch(followersUrl.toString(), {
+        headers: {
+          accept: "application/json",
+          "x-api-key": neynarApiKey,
         },
-      )
+      })
 
-      if (!nextResponse.ok) break
+      if (!followersResponse.ok) {
+        break
+      }
 
-      const nextData = await nextResponse.json()
-      const nextUsers = nextData.users || []
-      isFollowing = nextUsers.some((user: any) => user.fid === checkinxyzFid)
-      checkedCount += nextUsers.length
-      cursor = nextData.next?.cursor
+      const followersData = await followersResponse.json()
+      const followers = followersData.users || []
 
-      console.log("[v0] Page check:", { checkedCount, isFollowing, hasMore: !!cursor })
+      // Check if user is in this batch of followers
+      const found = followers.find((f: any) => f.fid === fid)
+      if (found) {
+        isFollowing = true
+        break
+      }
+
+      // Check if there are more pages
+      cursor = followersData.next?.cursor
+      if (!cursor) {
+        break
+      }
+
+      attempts++
     }
 
     if (isFollowing) {
