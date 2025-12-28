@@ -20,20 +20,26 @@ export function AddMiniAppPrompt({ isOpen, onClose, onAdded }: AddMiniAppPromptP
       const module = await import("@farcaster/miniapp-sdk")
       const sdk = module.sdk
 
-      const result = await sdk.actions.addMiniApp()
+      await sdk.actions.addMiniApp()
 
-      if (result.added) {
+      // If we reach here, mini app was added successfully
+      onAdded()
+      onClose()
+    } catch (err: any) {
+      console.log("[v0] Add mini app error:", err)
+
+      const errorMessage = err?.message || err?.toString() || ""
+
+      if (errorMessage.includes("RejectedByUser") || errorMessage.includes("rejected")) {
+        setError("You cancelled the request. Tap 'Add to Warpcast' to try again.")
+      } else if (errorMessage.includes("InvalidDomainManifest") || errorMessage.includes("manifest")) {
+        setError("Configuration error. Please contact support.")
+      } else if (errorMessage.includes("already")) {
+        // Mini app already added
         onAdded()
         onClose()
       } else {
-        setError("Failed to add mini app. Please try again.")
-      }
-    } catch (err: any) {
-      console.log("[v0] Add mini app error:", err)
-      if (err?.message?.includes("RejectedByUser")) {
-        setError("You cancelled the request. Please try again.")
-      } else {
-        setError("Failed to add mini app. Please try again.")
+        setError("Could not add mini app. Please try again.")
       }
     } finally {
       setLoading(false)
