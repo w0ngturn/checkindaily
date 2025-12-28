@@ -60,10 +60,13 @@ export async function POST(request: Request) {
     const followData = await followResponse.json()
     const targetUser = followData.users?.[0]
 
-    // viewer_context.followed_by = true means the target follows the viewer
-    const isFollowing = targetUser?.viewer_context?.followed_by === true
+    // viewer_context.following = true means the viewer follows the target
+    // When we set viewer_fid=user and fetch target=@checkinxyz:
+    // - viewer_context.following = user follows @checkinxyz (THIS IS WHAT WE WANT)
+    // - viewer_context.followed_by = @checkinxyz follows user
+    const isFollowing = targetUser?.viewer_context?.following === true
 
-    console.log("Follow check result:", {
+    console.log("[v0] Follow check result:", {
       userFid: fid,
       targetFid: CHECKINXYZ_FID,
       viewerContext: targetUser?.viewer_context,
