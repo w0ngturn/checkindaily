@@ -76,8 +76,10 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* Removed comment from inside @theme inline block to fix CSS parsing error */
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  --font-sans: system-ui, sans-serif;
+  --font-mono: monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

@@ -10,6 +10,7 @@ import { BottomNav } from "@/components/bottom-nav"
 import { Tasks } from "@/components/tasks"
 import { Tokens } from "@/components/tokens"
 import { AddMiniAppPrompt } from "@/components/add-miniapp-prompt"
+import { NotificationSettings } from "@/components/notification-settings"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
 import Roadmap from "@/components/roadmap"
 import { ChevronDown, ChevronUp } from "lucide-react"
@@ -231,6 +232,13 @@ export default function Home() {
                   </div>
                 </div>
               </section>
+
+              {/* Added NotificationSettings after main check-in card */}
+              {userFid && (
+                <section className="mt-4">
+                  <NotificationSettings fid={userFid} />
+                </section>
+              )}
 
               <section className="mt-4">
                 <button

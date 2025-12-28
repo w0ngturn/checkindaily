@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { CheckCircle, ExternalLink, Gift, Loader2, UserPlus } from "lucide-react"
-import sdk from "@farcaster/frame-sdk"
 
 interface TasksProps {
   fid: number | null
@@ -39,6 +38,8 @@ export function Tasks({ fid }: TasksProps) {
   useEffect(() => {
     const initSdk = async () => {
       try {
+        const module = await import("@farcaster/miniapp-sdk")
+        const sdk = module.sdk
         const context = await sdk.context
         if (context) {
           setSdkReady(true)
@@ -155,6 +156,8 @@ export function Tasks({ fid }: TasksProps) {
   const handleOpenInFarcaster = async (url: string) => {
     try {
       if (sdkReady) {
+        const module = await import("@farcaster/miniapp-sdk")
+        const sdk = module.sdk
         await sdk.actions.openUrl({ url })
       } else {
         const warpcastUrl = url.replace("https://warpcast.com/", "warpcast://")
@@ -204,7 +207,7 @@ export function Tasks({ fid }: TasksProps) {
             key={task.id}
             className={`rounded-2xl border ${
               isClaimed
-                ? "border-green-500 bg-green-950/30"
+                ? "border-green-500 bg-green-900/30"
                 : isCompleted
                   ? "border-cyan-500 bg-cyan-950/30"
                   : "border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900"
