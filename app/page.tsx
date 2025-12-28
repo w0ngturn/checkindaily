@@ -9,7 +9,7 @@ import { Leaderboard } from "@/components/leaderboard"
 import { BottomNav } from "@/components/bottom-nav"
 import { Tasks } from "@/components/tasks"
 import { Tokens } from "@/components/tokens"
-import { NotificationSettings } from "@/components/notification-settings"
+import { AddMiniAppPrompt } from "@/components/add-miniapp-prompt"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
 import Roadmap from "@/components/roadmap"
 import { ChevronDown, ChevronUp } from "lucide-react"
@@ -26,6 +26,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "roadmap" | "tasks" | "tokens">("home")
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [sdkInstance, setSdkInstance] = useState<any>(null)
+  const [showAddMiniAppPrompt, setShowAddMiniAppPrompt] = useState(false)
+  const [miniAppAdded, setMiniAppAdded] = useState(false)
 
   const initializeSdk = useCallback(async () => {
     try {
@@ -52,14 +54,18 @@ export default function Home() {
           displayName: context.user.displayName || username,
           pfpUrl: context.user.pfpUrl || null,
         })
+
+        if (context.client?.added === false) {
+          setShowAddMiniAppPrompt(true)
+        } else {
+          setMiniAppAdded(true)
+        }
       }
 
-      // Signal to Warpcast that the app is ready
       sdk.actions.ready()
     } catch (err) {
       console.log("[v0] SDK initialization error:", err)
     } finally {
-      // Always hide splash after initialization attempt
       setTimeout(() => setShowSplash(false), 500)
     }
   }, [])
@@ -67,6 +73,24 @@ export default function Home() {
   useEffect(() => {
     initializeSdk()
   }, [initializeSdk])
+
+  useEffect(() => {
+    if (miniAppAdded || !sdkInstance) return
+
+    const checkInterval = setInterval(async () => {
+      try {
+        const context = await sdkInstance.context
+        if (context?.client?.added === false && !showAddMiniAppPrompt) {
+          setShowAddMiniAppPrompt(true)
+        } else if (context?.client?.added === true) {
+          setMiniAppAdded(true)
+          setShowAddMiniAppPrompt(false)
+        }
+      } catch {}
+    }, 60000)
+
+    return () => clearInterval(checkInterval)
+  }, [miniAppAdded, sdkInstance, showAddMiniAppPrompt])
 
   const handleCheckin = async () => {
     setLoading(true)
@@ -122,6 +146,16 @@ export default function Home() {
     <>
       <SplashScreen isVisible={showSplash} />
 
+      {showAddMiniAppPrompt && !miniAppAdded && (
+        <AddMiniAppPrompt
+          onClose={() => setShowAddMiniAppPrompt(false)}
+          onAdded={() => {
+            setMiniAppAdded(true)
+            setShowAddMiniAppPrompt(false)
+          }}
+        />
+      )}
+
       <main className="min-h-screen bg-background text-foreground pb-20">
         <div className="mx-auto max-w-[1100px] px-4 sm:px-7">
           <header className="flex items-center justify-between py-4">
@@ -170,12 +204,6 @@ export default function Home() {
                   </div>
                 </div>
               </section>
-
-              {userFid && (
-                <section className="mt-4">
-                  <NotificationSettings fid={userFid} />
-                </section>
-              )}
 
               <section className="mt-4">
                 <button
