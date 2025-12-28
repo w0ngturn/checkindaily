@@ -57,10 +57,10 @@ export async function POST(request: Request) {
 
     const data = await relationshipResponse.json()
 
-    // When fetching CHECKINXYZ with viewer_fid=user, viewer_context.followed_by means user follows CHECKINXYZ
+    // When fetching CHECKINXYZ with viewer_fid=user, viewer_context.following means user follows CHECKINXYZ
     const user = data?.users?.[0]
     const viewerContext = user?.viewer_context
-    const isFollowing = viewerContext?.followed_by === true
+    const isFollowing = viewerContext?.following === true
 
     if (isFollowing) {
       // Mark task as completed (not claimed yet)
