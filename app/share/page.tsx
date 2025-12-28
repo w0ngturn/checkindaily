@@ -4,7 +4,7 @@ type Props = {
   searchParams: Promise<{ streak?: string; points?: string; tier?: string }>
 }
 
-const FRAME_IMAGE_URL = "https://checkindaily.xyz/api/og/frame"
+const FRAME_IMAGE_URL = "https://checkindaily.xyz/images/frame-image.jpg"
 const SPLASH_IMAGE_URL = "https://checkindaily.xyz/images/checkin-logo.png"
 const OG_IMAGE_URL = "https://checkindaily.xyz/images/checkin-og.png"
 

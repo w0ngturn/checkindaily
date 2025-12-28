@@ -14,7 +14,7 @@ export const viewport: Viewport = {
   themeColor: "#0e1b52",
 }
 
-const FRAME_IMAGE_URL = "https://checkindaily.xyz/api/og/frame"
+const FRAME_IMAGE_URL = "https://checkindaily.xyz/images/frame-image.jpg"
 const SPLASH_IMAGE_URL = "https://checkindaily.xyz/images/checkin-logo.png"
 const OG_IMAGE_URL = "https://checkindaily.xyz/images/checkin-og.png"
 
