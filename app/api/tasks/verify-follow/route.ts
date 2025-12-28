@@ -37,46 +37,34 @@ export async function POST(request: Request) {
       })
     }
 
-    let isFollowing = false
-    let cursor: string | null = null
-    let attempts = 0
-    const maxAttempts = 10
+    const bulkUrl = new URL("https://api.neynar.com/v2/farcaster/user/bulk")
+    bulkUrl.searchParams.set("fids", CHECKINXYZ_FID.toString())
+    bulkUrl.searchParams.set("viewer_fid", fid.toString())
 
-    while (attempts < maxAttempts) {
-      const followersUrl = new URL(`https://api.neynar.com/v2/farcaster/followers`)
-      followersUrl.searchParams.set("fid", CHECKINXYZ_FID.toString())
-      followersUrl.searchParams.set("limit", "100")
-      if (cursor) {
-        followersUrl.searchParams.set("cursor", cursor)
-      }
+    const bulkResponse = await fetch(bulkUrl.toString(), {
+      headers: {
+        accept: "application/json",
+        "x-api-key": neynarApiKey,
+      },
+    })
 
-      const followersResponse = await fetch(followersUrl.toString(), {
-        headers: {
-          accept: "application/json",
-          "x-api-key": neynarApiKey,
-        },
-      })
-
-      if (!followersResponse.ok) {
-        break
-      }
-
-      const followersData = await followersResponse.json()
-      const followers = followersData.users || []
-
-      const found = followers.find((f: any) => f.fid === fid)
-      if (found) {
-        isFollowing = true
-        break
-      }
-
-      cursor = followersData.next?.cursor
-      if (!cursor) {
-        break
-      }
-
-      attempts++
+    if (!bulkResponse.ok) {
+      const errorText = await bulkResponse.text()
+      console.error("[v0] Neynar bulk API error:", errorText)
+      return NextResponse.json({ error: "Failed to verify follow status" }, { status: 500 })
     }
+
+    const bulkData = await bulkResponse.json()
+    console.log("[v0] Bulk API response:", JSON.stringify(bulkData, null, 2))
+
+    const targetUser = bulkData.users?.[0]
+
+    // viewer_context.followed_by means the viewer (user with fid) follows the target (checkinxyz)
+    const isFollowing = targetUser?.viewer_context?.followed_by === true
+
+    console.log("[v0] Target user:", targetUser?.username)
+    console.log("[v0] Viewer context:", JSON.stringify(targetUser?.viewer_context))
+    console.log("[v0] Is following:", isFollowing)
 
     if (isFollowing) {
       // Mark task as completed (not claimed yet)
