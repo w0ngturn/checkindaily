@@ -37,7 +37,7 @@ async function fetchNeynarProfiles(
         accept: "application/json",
         "x-api-key": apiKey,
       },
-      next: { revalidate: 60 }, // Cache for 60 seconds
+      next: { revalidate: 60 },
     })
 
     if (!response.ok) {
@@ -63,17 +63,38 @@ async function fetchNeynarProfiles(
   }
 }
 
+function getTimeFrameFilter(timeFrame: string): Date | null {
+  const now = new Date()
+  switch (timeFrame) {
+    case "weekly":
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    case "monthly":
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    default:
+      return null
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
     const limit = Number(url.searchParams.get("limit")) || 10
     const sortBy = url.searchParams.get("sortBy") || "streak"
+    const timeFrame = url.searchParams.get("timeFrame") || "all"
+    const currentUserFid = url.searchParams.get("currentUserFid")
 
     const supabase = await getSupabaseClient()
+    const timeFilter = getTimeFrameFilter(timeFrame)
 
-    const { data: checkinsData, error: checkinsError } = await supabase
+    let checkinsQuery = supabase
       .from("users_checkins")
-      .select("fid, username, display_name, pfp_url, streak_count, total_checkins")
+      .select("fid, username, display_name, pfp_url, streak_count, total_checkins, last_checkin")
+
+    if (timeFilter) {
+      checkinsQuery = checkinsQuery.gte("last_checkin", timeFilter.toISOString())
+    }
+
+    const { data: checkinsData, error: checkinsError } = await checkinsQuery
 
     if (checkinsError) {
       console.error("[leaderboard] Checkins error:", checkinsError)
@@ -81,10 +102,11 @@ export async function GET(req: Request) {
     }
 
     const fidsForRewards = checkinsData?.map((u: any) => u.fid) || []
+
     const { data: rewardsData, error: rewardsError } = await supabase
       .from("user_rewards")
       .select("fid, total_points, tier")
-      .in("fid", fidsForRewards)
+      .in("fid", fidsForRewards.length > 0 ? fidsForRewards : [0])
 
     if (rewardsError) {
       console.error("[leaderboard] Rewards error:", rewardsError)
@@ -98,31 +120,59 @@ export async function GET(req: Request) {
       })
     }
 
+    // Merge checkins with rewards
     const merged = (checkinsData || []).map((user: any) => ({
       ...user,
       total_points: rewardsMap.get(user.fid)?.total_points || 0,
       tier: rewardsMap.get(user.fid)?.tier || "bronze",
     }))
 
-    // Sort by selected criteria
-    let sorted = merged.sort((a: any, b: any) => {
-      if (sortBy === "points") {
-        return (b.total_points || 0) - (a.total_points || 0)
-      } else {
-        return (b.streak_count || 0) - (a.streak_count || 0)
+    const sorted = merged.sort((a: any, b: any) => {
+      switch (sortBy) {
+        case "points":
+          return (b.total_points || 0) - (a.total_points || 0)
+        case "checkins":
+          return (b.total_checkins || 0) - (a.total_checkins || 0)
+        default: // streak
+          return (b.streak_count || 0) - (a.streak_count || 0)
       }
     })
 
-    sorted = sorted.slice(0, limit)
+    // Assign ranks to all users before slicing
+    const rankedUsers = sorted.map((user: any, index: number) => ({
+      ...user,
+      rank: index + 1,
+    }))
 
-    const fids = sorted.map((user: any) => user.fid)
+    let currentUserRank = null
+    if (currentUserFid) {
+      const userRankData = rankedUsers.find((u: any) => u.fid === Number(currentUserFid))
+      if (userRankData) {
+        const neynarProfile = (await fetchNeynarProfiles([Number(currentUserFid)]))[Number(currentUserFid)]
+        currentUserRank = {
+          rank: userRankData.rank,
+          fid: userRankData.fid,
+          username: neynarProfile?.username || userRankData.username || `fid_${userRankData.fid}`,
+          displayName: neynarProfile?.displayName || userRankData.display_name || `User ${userRankData.fid}`,
+          pfpUrl: neynarProfile?.pfpUrl || userRankData.pfp_url || "/avatar.png",
+          streakCount: userRankData.streak_count || 0,
+          totalCheckins: userRankData.total_checkins || 0,
+          totalPoints: userRankData.total_points || 0,
+          tier: userRankData.tier || "bronze",
+        }
+      }
+    }
+
+    // Slice for top results
+    const topUsers = rankedUsers.slice(0, limit)
+    const fids = topUsers.map((user: any) => user.fid)
     const neynarProfiles = await fetchNeynarProfiles(fids)
 
-    const leaderboard = sorted.map((user: any, index: number) => {
+    const leaderboard = topUsers.map((user: any) => {
       const neynarProfile = neynarProfiles[user.fid]
 
       return {
-        rank: index + 1,
+        rank: user.rank,
         fid: user.fid,
         username: neynarProfile?.username || user.username || `fid_${user.fid}`,
         displayName: neynarProfile?.displayName || user.display_name || `User ${user.fid}`,
@@ -134,7 +184,14 @@ export async function GET(req: Request) {
       }
     })
 
-    return NextResponse.json({ leaderboard }, { status: 200 })
+    return NextResponse.json(
+      {
+        leaderboard,
+        currentUserRank,
+        totalUsers: rankedUsers.length,
+      },
+      { status: 200 },
+    )
   } catch (error) {
     console.error("[leaderboard] Error:", error)
     return NextResponse.json({ error: "Failed to fetch leaderboard" }, { status: 500 })
