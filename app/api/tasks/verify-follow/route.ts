@@ -5,7 +5,7 @@ export const runtime = "nodejs"
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-const CHECKINXYZ_USERNAME = "checkinxyz"
+const CHECKINXYZ_FID = 1937520
 
 export async function POST(request: Request) {
   try {
@@ -37,36 +37,14 @@ export async function POST(request: Request) {
       })
     }
 
-    const userResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/by_username?username=${CHECKINXYZ_USERNAME}`,
-      {
-        headers: {
-          accept: "application/json",
-          "x-api-key": neynarApiKey,
-        },
-      },
-    )
-
-    if (!userResponse.ok) {
-      return NextResponse.json({ error: "Failed to fetch @checkinxyz info" }, { status: 500 })
-    }
-
-    const userData = await userResponse.json()
-    const checkinxyzFid = userData.user?.fid
-
-    if (!checkinxyzFid) {
-      return NextResponse.json({ error: "@checkinxyz account not found" }, { status: 500 })
-    }
-
-    // This checks users who follow @checkinxyz (i.e., @checkinxyz's followers)
     let isFollowing = false
     let cursor: string | null = null
     let attempts = 0
-    const maxAttempts = 10 // Check up to 1000 followers (100 per page)
+    const maxAttempts = 10
 
     while (attempts < maxAttempts) {
       const followersUrl = new URL(`https://api.neynar.com/v2/farcaster/followers`)
-      followersUrl.searchParams.set("fid", checkinxyzFid.toString())
+      followersUrl.searchParams.set("fid", CHECKINXYZ_FID.toString())
       followersUrl.searchParams.set("limit", "100")
       if (cursor) {
         followersUrl.searchParams.set("cursor", cursor)
@@ -86,14 +64,12 @@ export async function POST(request: Request) {
       const followersData = await followersResponse.json()
       const followers = followersData.users || []
 
-      // Check if user is in this batch of followers
       const found = followers.find((f: any) => f.fid === fid)
       if (found) {
         isFollowing = true
         break
       }
 
-      // Check if there are more pages
       cursor = followersData.next?.cursor
       if (!cursor) {
         break
