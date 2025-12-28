@@ -74,14 +74,14 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        isFollowing: true,
+        verified: true,
         message: "Verified! You are following @checkinxyz. Claim your reward!",
       })
     }
 
     return NextResponse.json({
       success: true,
-      isFollowing: false,
+      verified: false,
       message: "You need to follow @checkinxyz first",
     })
   } catch (error: any) {

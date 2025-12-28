@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { CheckCircle, ExternalLink, Gift, Loader2, UserPlus } from "lucide-react"
+import { CheckCircle, ExternalLink, Gift, Heart, Loader2, Repeat2, UserPlus } from "lucide-react"
 
 interface TasksProps {
   fid: number | null
@@ -23,6 +23,9 @@ export function Tasks({ fid }: TasksProps) {
   const [error, setError] = useState("")
   const [sdkReady, setSdkReady] = useState(false)
 
+  const CAST_HASH = "0x4c2587f4"
+  const CAST_URL = "https://warpcast.com/checkinxyz/0x4c2587f4"
+
   const TASKS = [
     {
       id: "follow_checkinxyz",
@@ -32,6 +35,31 @@ export function Tasks({ fid }: TasksProps) {
       icon: UserPlus,
       action: "Follow",
       link: "https://warpcast.com/checkinxyz",
+      verifyEndpoint: "/api/tasks/verify-follow",
+    },
+    {
+      id: "like_cast",
+      title: "Like our announcement",
+      description: "Like our official announcement cast",
+      points: 25,
+      icon: Heart,
+      action: "Like",
+      link: CAST_URL,
+      verifyEndpoint: "/api/tasks/verify-reaction",
+      reactionType: "like",
+      castHash: CAST_HASH,
+    },
+    {
+      id: "recast_cast",
+      title: "Recast our announcement",
+      description: "Recast to spread the word about CHECKIN",
+      points: 25,
+      icon: Repeat2,
+      action: "Recast",
+      link: CAST_URL,
+      verifyEndpoint: "/api/tasks/verify-reaction",
+      reactionType: "recast",
+      castHash: CAST_HASH,
     },
   ]
 
@@ -73,7 +101,7 @@ export function Tasks({ fid }: TasksProps) {
     }
   }
 
-  const handleVerifyFollow = async () => {
+  const handleVerify = async (task: (typeof TASKS)[0]) => {
     if (!fid) {
       setError("Please open this app in Warpcast")
       return
@@ -84,10 +112,16 @@ export function Tasks({ fid }: TasksProps) {
     setMessage("")
 
     try {
-      const response = await fetch("/api/tasks/verify-follow", {
+      const body: any = { fid, taskId: task.id }
+      if (task.reactionType) {
+        body.reactionType = task.reactionType
+        body.castHash = task.castHash
+      }
+
+      const response = await fetch(task.verifyEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fid }),
+        body: JSON.stringify(body),
       })
 
       const data = await response.json()
@@ -97,16 +131,16 @@ export function Tasks({ fid }: TasksProps) {
           setMessage(data.message)
           setTaskStatuses((prev) => ({
             ...prev,
-            follow_checkinxyz: { completed: true, claimed: data.claimed },
+            [task.id]: { completed: true, claimed: data.claimed },
           }))
-        } else if (data.isFollowing) {
+        } else if (data.verified) {
           setMessage(data.message)
           setTaskStatuses((prev) => ({
             ...prev,
-            follow_checkinxyz: { completed: true, claimed: false },
+            [task.id]: { completed: true, claimed: false },
           }))
         } else {
-          setError("You need to follow @checkinxyz first")
+          setError(data.message || `Please ${task.action.toLowerCase()} first`)
         }
       } else {
         setError(data.error || "Verification failed")
@@ -253,7 +287,7 @@ export function Tasks({ fid }: TasksProps) {
                         {task.action}
                       </button>
                       <button
-                        onClick={handleVerifyFollow}
+                        onClick={() => handleVerify(task)}
                         disabled={verifying}
                         className="flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
                       >
