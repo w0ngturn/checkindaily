@@ -14,17 +14,18 @@ export const viewport: Viewport = {
   themeColor: "#0e1b52",
 }
 
-const OG_IMAGE_URL = "https://checkindaily.xyz/images/checkin-og.png"
+const FRAME_IMAGE_URL = "https://checkindaily.xyz/api/og/frame"
 const SPLASH_IMAGE_URL = "https://checkindaily.xyz/images/checkin-logo.png"
+const OG_IMAGE_URL = "https://checkindaily.xyz/images/checkin-og.png"
 
 const frameData = {
   version: "1",
-  imageUrl: OG_IMAGE_URL,
+  imageUrl: FRAME_IMAGE_URL,
   button: {
     title: "Start Checking In",
     action: {
       type: "launch_miniapp",
-      url: "https://checkindaily.xyz/",
+      url: "https://checkindaily.xyz",
       name: "CHECKIN",
       splashImageUrl: SPLASH_IMAGE_URL,
       splashBackgroundColor: "#0a0f1a",
@@ -53,17 +54,7 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    "og:image": OG_IMAGE_URL,
-    "og:image:width": "1200",
-    "og:image:height": "630",
-    "og:image:type": "image/png",
-    "fc:frame": JSON.stringify(frameData),
     "fc:miniapp": JSON.stringify(frameData),
-    "farcaster:domain": "checkindaily.xyz",
-    "farcaster:signature": "dS5LrJIQaJILi+wB+xcw8V9zjLtICsRElvSoBl+0GWs3wS07+x26Xxj43xM2oMLdtNFekJ+TMWnWpDYm6qo4uhw=",
-    "farcaster:payload": "eyJkb21haW4iOiJjaGVja2luZGFpbHkueHl6In0",
-    "farcaster:header":
-      "eyJmaWQiOjE5Mzc1MjAsInR5cGUiOiJhdXRoIiwia2V5IjoiMHg2YTkyNDVCRGQ2NzdlYWZGYkM4MDhCODY2MEE2MTJGYkUxRjhmOTBhIn0",
   },
   icons: {
     icon: [

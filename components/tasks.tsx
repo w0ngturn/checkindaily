@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { CheckCircle, ExternalLink, Gift, Loader2, UserPlus } from "lucide-react"
+import sdk from "@farcaster/frame-sdk"
 
 interface TasksProps {
   fid: number | null
@@ -136,6 +137,15 @@ export function Tasks({ fid }: TasksProps) {
     }
   }
 
+  const handleOpenInFarcaster = async (url: string) => {
+    try {
+      await sdk.actions.openUrl({ url })
+    } catch (err) {
+      // Fallback to window.open if SDK not available
+      window.open(url, "_blank")
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -214,15 +224,13 @@ export function Tasks({ fid }: TasksProps) {
                     </button>
                   ) : (
                     <>
-                      <a
-                        href={task.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => handleOpenInFarcaster(task.link)}
                         className="flex items-center gap-1 rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-blue-600"
                       >
                         <ExternalLink className="h-3 w-3" />
                         {task.action}
-                      </a>
+                      </button>
                       <button
                         onClick={handleVerifyFollow}
                         disabled={verifying}

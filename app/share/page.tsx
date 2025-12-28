@@ -4,8 +4,9 @@ type Props = {
   searchParams: Promise<{ streak?: string; points?: string; tier?: string }>
 }
 
-const OG_IMAGE_URL = "https://checkindaily.xyz/images/checkin-og.png"
+const FRAME_IMAGE_URL = "https://checkindaily.xyz/api/og/frame"
 const SPLASH_IMAGE_URL = "https://checkindaily.xyz/images/checkin-logo.png"
+const OG_IMAGE_URL = "https://checkindaily.xyz/images/checkin-og.png"
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = await searchParams
@@ -16,15 +17,14 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const title = `${streak}-Day Streak on CHECKIN!`
   const description = `Earned ${points} points at ${tier} tier. Join me and start building your streak!`
 
-  // Frame data for Farcaster embed
   const frameData = {
     version: "1",
-    imageUrl: OG_IMAGE_URL,
+    imageUrl: FRAME_IMAGE_URL,
     button: {
       title: "Start Checking In",
       action: {
         type: "launch_miniapp",
-        url: "https://checkindaily.xyz/",
+        url: "https://checkindaily.xyz",
         name: "CHECKIN",
         splashImageUrl: SPLASH_IMAGE_URL,
         splashBackgroundColor: "#0a0f1a",
@@ -41,7 +41,6 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       images: [{ url: OG_IMAGE_URL, width: 1200, height: 630 }],
     },
     other: {
-      "fc:frame": JSON.stringify(frameData),
       "fc:miniapp": JSON.stringify(frameData),
     },
   }
