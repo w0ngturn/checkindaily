@@ -10,6 +10,8 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { fid, taskId, reactionType, castHash } = body
 
+    console.log("[v0] verify-reaction called:", { fid, taskId, reactionType, castHash })
+
     if (!fid || !taskId || !reactionType || !castHash) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
@@ -17,6 +19,7 @@ export async function POST(request: Request) {
     const neynarApiKey = process.env.NEYNAR_API_KEY
 
     if (!neynarApiKey) {
+      console.log("[v0] NEYNAR_API_KEY not found")
       return NextResponse.json({ error: "Neynar API not configured" }, { status: 500 })
     }
 
@@ -37,8 +40,12 @@ export async function POST(request: Request) {
       })
     }
 
+    const neynarReactionType = reactionType === "like" ? "likes" : "recasts"
+
     // Fetch reactions for the cast
-    const reactionsUrl = `https://api.neynar.com/v2/farcaster/reactions/cast?hash=${castHash}&types=${reactionType}&limit=100`
+    const reactionsUrl = `https://api.neynar.com/v2/farcaster/reactions/cast?hash=${castHash}&types=${neynarReactionType}&limit=100`
+
+    console.log("[v0] Fetching reactions from:", reactionsUrl)
 
     let cursor: string | null = null
     let hasReaction = false
@@ -57,15 +64,18 @@ export async function POST(request: Request) {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error("Neynar API error:", response.status, errorText)
+        console.error("[v0] Neynar API error:", response.status, errorText)
         return NextResponse.json({ error: "Failed to verify reaction" }, { status: 500 })
       }
 
       const data = await response.json()
+      console.log("[v0] Neynar response:", JSON.stringify(data).substring(0, 500))
+
       const reactions = data?.reactions || []
 
       // Check if user's FID is in the reactions
       for (const reaction of reactions) {
+        console.log("[v0] Checking reaction user fid:", reaction.user?.fid, "against:", fid)
         if (reaction.user?.fid === fid) {
           hasReaction = true
           break
@@ -76,6 +86,8 @@ export async function POST(request: Request) {
       if (!cursor) break
       attempts++
     }
+
+    console.log("[v0] Has reaction:", hasReaction)
 
     if (hasReaction) {
       // Determine task name and points based on reaction type
@@ -104,7 +116,7 @@ export async function POST(request: Request) {
       message: `Please ${reactionType} the post first`,
     })
   } catch (error: any) {
-    console.error("Verify reaction error:", error)
+    console.error("[v0] Verify reaction error:", error)
     return NextResponse.json({ error: error.message || "Verification failed" }, { status: 500 })
   }
 }

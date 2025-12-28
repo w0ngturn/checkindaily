@@ -21,10 +21,9 @@ export function Tasks({ fid }: TasksProps) {
   const [claiming, setClaiming] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [sdkReady, setSdkReady] = useState(false)
 
-  const CAST_HASH = "0x4c2587f4"
-  const CAST_URL = "https://warpcast.com/checkinxyz/0x4c2587f4"
+  const CAST_HASH = "0x4c2587f469dfbcfd70ed4f54a345b194e09a1e90"
+  const CAST_URL = "https://warpcast.com/checkinxyz/0x4c2587f469dfbcfd70ed4f54a345b194e09a1e90"
 
   const TASKS = [
     {
@@ -64,22 +63,6 @@ export function Tasks({ fid }: TasksProps) {
   ]
 
   useEffect(() => {
-    const initSdk = async () => {
-      try {
-        const module = await import("@farcaster/miniapp-sdk")
-        const sdk = module.sdk
-        const context = await sdk.context
-        if (context) {
-          setSdkReady(true)
-        }
-      } catch (err) {
-        console.error("SDK init failed:", err)
-      }
-    }
-    initSdk()
-  }, [])
-
-  useEffect(() => {
     if (fid) {
       fetchTaskStatus()
     } else {
@@ -112,7 +95,7 @@ export function Tasks({ fid }: TasksProps) {
     setMessage("")
 
     try {
-      const body: any = { fid, taskId: task.id }
+      const body: Record<string, unknown> = { fid, taskId: task.id }
       if (task.reactionType) {
         body.reactionType = task.reactionType
         body.castHash = task.castHash
@@ -145,8 +128,9 @@ export function Tasks({ fid }: TasksProps) {
       } else {
         setError(data.error || "Verification failed")
       }
-    } catch (err: any) {
-      setError(err.message || "Verification failed")
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Verification failed"
+      setError(errorMessage)
     } finally {
       setVerifying(false)
     }
@@ -180,25 +164,21 @@ export function Tasks({ fid }: TasksProps) {
       } else {
         setError(data.error || "Claim failed")
       }
-    } catch (err: any) {
-      setError(err.message || "Claim failed")
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Claim failed"
+      setError(errorMessage)
     } finally {
       setClaiming(false)
     }
   }
 
-  const handleOpenInFarcaster = async (url: string) => {
-    try {
-      if (sdkReady) {
-        const module = await import("@farcaster/miniapp-sdk")
-        const sdk = module.sdk
-        await sdk.actions.openUrl({ url })
-      } else {
-        const warpcastUrl = url.replace("https://warpcast.com/", "warpcast://")
-        window.location.href = warpcastUrl
-      }
-    } catch (err) {
-      console.error("Failed to open URL:", err)
+  const handleOpenInFarcaster = (url: string) => {
+    const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : ""
+    const isWarpcast = userAgent.includes("Warpcast") || userAgent.includes("farcaster")
+
+    if (isWarpcast) {
+      window.location.href = url.replace("https://warpcast.com", "warpcast:/")
+    } else {
       window.open(url, "_blank")
     }
   }

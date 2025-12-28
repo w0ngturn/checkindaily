@@ -9,7 +9,6 @@ import { Leaderboard } from "@/components/leaderboard"
 import { BottomNav } from "@/components/bottom-nav"
 import { Tasks } from "@/components/tasks"
 import { Tokens } from "@/components/tokens"
-import { AddMiniAppPrompt } from "@/components/add-miniapp-prompt"
 import { NotificationSettings } from "@/components/notification-settings"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
 import Roadmap from "@/components/roadmap"
@@ -26,92 +25,51 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "roadmap" | "tasks" | "tokens">("home")
   const [showHowItWorks, setShowHowItWorks] = useState(false)
-  const [showAddMiniAppPrompt, setShowAddMiniAppPrompt] = useState(false)
-  const [miniAppAdded, setMiniAppAdded] = useState(false)
 
   useEffect(() => {
     const initializeApp = async () => {
-      try {
-        let sdk: any = null
-        try {
-          const module = await import("@farcaster/miniapp-sdk")
-          sdk = module.sdk
-        } catch (e) {
-          console.log("[v0] SDK not available")
-          setShowSplash(false)
-          return
-        }
+      // Check if we're in an iframe (Farcaster mini app context)
+      const isInFrame = typeof window !== "undefined" && window.parent !== window
 
-        if (sdk?.actions?.ready) {
-          sdk.actions.ready?.().catch(() => {})
-        }
+      if (isInFrame) {
+        // Listen for context from parent frame
+        const handleMessage = async (event: MessageEvent) => {
+          if (event.data?.type === "frameContext" && event.data?.context?.user?.fid) {
+            const fid = event.data.context.user.fid
+            setUserFid(fid)
 
-        let isAdded = false
-
-        if (sdk?.context) {
-          try {
-            const context = await Promise.race([
-              sdk.context,
-              new Promise((_, reject) => setTimeout(() => reject("timeout"), 1500)),
-            ])
-
-            if (context?.client?.added) {
-              isAdded = true
-              setMiniAppAdded(true)
-            }
-
-            if (context?.user?.fid) {
-              const fid = context.user.fid
-              setUserFid(fid)
-
-              let username = context.user.username || "User"
-              if (!context.user.username || context.user.username === "User") {
+            let username = event.data.context.user.username || "User"
+            if (!username || username === "User") {
+              try {
                 const neynarUsername = await getUsernameFromNeynar(fid)
-                if (neynarUsername) {
-                  username = neynarUsername
-                }
-              }
-
-              setUserData({
-                fid,
-                username,
-                displayName: context.user.displayName || username || "User",
-                pfpUrl: context.user.pfpUrl || null,
-              })
+                if (neynarUsername) username = neynarUsername
+              } catch {}
             }
-          } catch (e) {
-            console.log("[v0] Context not available")
+
+            setUserData({
+              fid,
+              username,
+              displayName: event.data.context.user.displayName || username,
+              pfpUrl: event.data.context.user.pfpUrl || null,
+            })
           }
         }
+
+        window.addEventListener("message", handleMessage)
+
+        // Request context from parent
+        window.parent.postMessage({ type: "requestContext" }, "*")
 
         setTimeout(() => {
-          setShowSplash(false)
-          if (!isAdded) {
-            setTimeout(() => setShowAddMiniAppPrompt(true), 500)
-          }
-        }, 800)
-
-        return
-      } catch (err) {
-        console.log("[v0] Init error:", err)
-        setTimeout(() => setShowSplash(false), 800)
+          window.removeEventListener("message", handleMessage)
+        }, 3000)
       }
+
+      setTimeout(() => setShowSplash(false), 800)
     }
 
     initializeApp()
   }, [])
-
-  useEffect(() => {
-    if (miniAppAdded || showSplash) return
-
-    const checkAndPrompt = setInterval(() => {
-      if (!miniAppAdded && !showAddMiniAppPrompt) {
-        setShowAddMiniAppPrompt(true)
-      }
-    }, 60000)
-
-    return () => clearInterval(checkAndPrompt)
-  }, [miniAppAdded, showSplash, showAddMiniAppPrompt])
 
   const handleCheckin = async () => {
     setLoading(true)
@@ -119,18 +77,7 @@ export default function Home() {
     setCheckinSuccess(false)
 
     try {
-      let fid = userFid
-
-      if (!fid) {
-        try {
-          const module = await import("@farcaster/miniapp-sdk")
-          const sdk = module.sdk
-          const context = await Promise.resolve(sdk.context)
-          fid = context?.user?.fid
-        } catch (e) {
-          console.log("[v0] Could not get FID during checkin:", e)
-        }
-      }
+      const fid = userFid
 
       if (!fid) {
         throw new Error("User FID not available. Please ensure you are opening this app in Warpcast.")
@@ -166,9 +113,9 @@ export default function Home() {
       } else {
         setError(data.error || "Check-in failed")
       }
-    } catch (err: any) {
-      console.error("[v0] Check-in error:", err)
-      setError(err.message || "Failed to check in. Please try again.")
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to check in. Please try again."
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -177,12 +124,6 @@ export default function Home() {
   return (
     <>
       <SplashScreen isVisible={showSplash} />
-
-      <AddMiniAppPrompt
-        isOpen={showAddMiniAppPrompt}
-        onClose={() => setShowAddMiniAppPrompt(false)}
-        onAdded={() => setMiniAppAdded(true)}
-      />
 
       <main className="min-h-screen bg-background text-foreground pb-20">
         <div className="mx-auto max-w-[1100px] px-4 sm:px-7">
@@ -233,7 +174,6 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* Added NotificationSettings after main check-in card */}
               {userFid && (
                 <section className="mt-4">
                   <NotificationSettings fid={userFid} />
