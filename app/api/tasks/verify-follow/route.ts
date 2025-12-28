@@ -37,34 +37,27 @@ export async function POST(request: Request) {
       })
     }
 
-    const bulkUrl = new URL("https://api.neynar.com/v2/farcaster/user/bulk")
-    bulkUrl.searchParams.set("fids", CHECKINXYZ_FID.toString())
-    bulkUrl.searchParams.set("viewer_fid", fid.toString())
+    const relationshipUrl = `https://api.neynar.com/v2/farcaster/user/relationship?fid=${fid}&target_fid=${CHECKINXYZ_FID}`
 
-    const bulkResponse = await fetch(bulkUrl.toString(), {
+    const relationshipResponse = await fetch(relationshipUrl, {
       headers: {
         accept: "application/json",
-        "x-api-key": neynarApiKey,
+        api_key: neynarApiKey,
       },
     })
 
-    if (!bulkResponse.ok) {
-      const errorText = await bulkResponse.text()
-      console.error("[v0] Neynar bulk API error:", errorText)
-      return NextResponse.json({ error: "Failed to verify follow status" }, { status: 500 })
+    if (!relationshipResponse.ok) {
+      const errorText = await relationshipResponse.text()
+      console.error("[v0] Neynar relationship API error:", errorText)
+      return NextResponse.json({ error: "Failed to verify follow status", detail: errorText }, { status: 500 })
     }
 
-    const bulkData = await bulkResponse.json()
-    console.log("[v0] Bulk API response:", JSON.stringify(bulkData, null, 2))
+    const relationshipData = await relationshipResponse.json()
 
-    const targetUser = bulkData.users?.[0]
+    const isFollowing = relationshipData?.relationship?.following === true
 
-    // viewer_context.followed_by means the viewer (user with fid) follows the target (checkinxyz)
-    const isFollowing = targetUser?.viewer_context?.followed_by === true
-
-    console.log("[v0] Target user:", targetUser?.username)
-    console.log("[v0] Viewer context:", JSON.stringify(targetUser?.viewer_context))
-    console.log("[v0] Is following:", isFollowing)
+    console.log("[v0] Relationship data:", JSON.stringify(relationshipData, null, 2))
+    console.log("[v0] Is following @checkinxyz:", isFollowing)
 
     if (isFollowing) {
       // Mark task as completed (not claimed yet)
