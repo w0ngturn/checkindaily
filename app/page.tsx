@@ -9,6 +9,7 @@ import { Leaderboard } from "@/components/leaderboard"
 import { BottomNav } from "@/components/bottom-nav"
 import { Tasks } from "@/components/tasks"
 import { Tokens } from "@/components/tokens"
+import { AddMiniAppPrompt } from "@/components/add-miniapp-prompt"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
 import Roadmap from "@/components/roadmap"
 import { ChevronDown, ChevronUp } from "lucide-react"
@@ -24,6 +25,8 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "roadmap" | "tasks" | "tokens">("home")
   const [showHowItWorks, setShowHowItWorks] = useState(false)
+  const [showAddMiniAppPrompt, setShowAddMiniAppPrompt] = useState(false)
+  const [miniAppAdded, setMiniAppAdded] = useState(false)
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -42,12 +45,19 @@ export default function Home() {
           sdk.actions.ready?.().catch(() => {})
         }
 
+        let isAdded = false
+
         if (sdk?.context) {
           try {
             const context = await Promise.race([
               sdk.context,
               new Promise((_, reject) => setTimeout(() => reject("timeout"), 1500)),
             ])
+
+            if (context?.client?.added) {
+              isAdded = true
+              setMiniAppAdded(true)
+            }
 
             if (context?.user?.fid) {
               const fid = context.user.fid
@@ -72,15 +82,35 @@ export default function Home() {
             console.log("[v0] Context not available")
           }
         }
+
+        setTimeout(() => {
+          setShowSplash(false)
+          if (!isAdded) {
+            setTimeout(() => setShowAddMiniAppPrompt(true), 500)
+          }
+        }, 800)
+
+        return
       } catch (err) {
         console.log("[v0] Init error:", err)
-      } finally {
         setTimeout(() => setShowSplash(false), 800)
       }
     }
 
     initializeApp()
   }, [])
+
+  useEffect(() => {
+    if (miniAppAdded || showSplash) return
+
+    const checkAndPrompt = setInterval(() => {
+      if (!miniAppAdded && !showAddMiniAppPrompt) {
+        setShowAddMiniAppPrompt(true)
+      }
+    }, 60000)
+
+    return () => clearInterval(checkAndPrompt)
+  }, [miniAppAdded, showSplash, showAddMiniAppPrompt])
 
   const handleCheckin = async () => {
     setLoading(true)
@@ -147,9 +177,14 @@ export default function Home() {
     <>
       <SplashScreen isVisible={showSplash} />
 
+      <AddMiniAppPrompt
+        isOpen={showAddMiniAppPrompt}
+        onClose={() => setShowAddMiniAppPrompt(false)}
+        onAdded={() => setMiniAppAdded(true)}
+      />
+
       <main className="min-h-screen bg-background text-foreground pb-20">
         <div className="mx-auto max-w-[1100px] px-4 sm:px-7">
-          {/* Header - always visible */}
           <header className="flex items-center justify-between py-4">
             <div
               className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-400 shadow-xl"
@@ -197,7 +232,6 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* How it works collapsible section */}
               <section className="mt-4">
                 <button
                   onClick={() => setShowHowItWorks(!showHowItWorks)}
@@ -276,7 +310,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Check-in success modal - always available */}
       {checkinSuccess && checkinData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="rounded-3xl border border-cyan-400 bg-gradient-to-b from-blue-950 to-blue-900 p-6 shadow-2xl max-w-sm w-full">
