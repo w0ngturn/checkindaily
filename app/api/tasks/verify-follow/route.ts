@@ -9,14 +9,14 @@ const CHECKINXYZ_FID = 1937520
 
 export async function POST(request: Request) {
   try {
-    const { fid } = await request.json()
+    const body = await request.json()
+    const { fid } = body
 
     if (!fid) {
       return NextResponse.json({ error: "FID required" }, { status: 400 })
     }
 
     const neynarApiKey = process.env.NEYNAR_API_KEY
-    console.log("[v0] NEYNAR_API_KEY exists:", !!neynarApiKey)
 
     if (!neynarApiKey) {
       return NextResponse.json({ error: "Neynar API not configured" }, { status: 500 })
@@ -39,29 +39,28 @@ export async function POST(request: Request) {
       })
     }
 
-    const relationshipUrl = `https://api.neynar.com/v2/farcaster/user/relationship?fid=${fid}&target_fid=${CHECKINXYZ_FID}`
-
-    console.log("[v0] Fetching relationship:", relationshipUrl)
+    // Fetch CHECKINXYZ user with viewer_fid to check relationship
+    const relationshipUrl = `https://api.neynar.com/v2/farcaster/user/bulk?fids=${CHECKINXYZ_FID}&viewer_fid=${fid}`
 
     const relationshipResponse = await fetch(relationshipUrl, {
       headers: {
         accept: "application/json",
-        api_key: neynarApiKey,
+        "x-api-key": neynarApiKey,
       },
     })
 
     if (!relationshipResponse.ok) {
       const errorText = await relationshipResponse.text()
-      console.error("[v0] Neynar relationship API error:", errorText)
-      return NextResponse.json({ error: "Failed to verify follow status", detail: errorText }, { status: 500 })
+      console.error("Neynar API error:", relationshipResponse.status, errorText)
+      return NextResponse.json({ error: "Failed to verify follow status" }, { status: 500 })
     }
 
-    const relationshipData = await relationshipResponse.json()
+    const data = await relationshipResponse.json()
 
-    const isFollowing = relationshipData?.relationship?.following === true
-
-    console.log("[v0] Relationship data:", JSON.stringify(relationshipData, null, 2))
-    console.log("[v0] Is following @checkinxyz:", isFollowing)
+    // When fetching CHECKINXYZ with viewer_fid=user, viewer_context.followed_by means user follows CHECKINXYZ
+    const user = data?.users?.[0]
+    const viewerContext = user?.viewer_context
+    const isFollowing = viewerContext?.followed_by === true
 
     if (isFollowing) {
       // Mark task as completed (not claimed yet)
@@ -86,7 +85,7 @@ export async function POST(request: Request) {
       message: "You need to follow @checkinxyz first",
     })
   } catch (error: any) {
-    console.error("[v0] Verify follow error:", error)
+    console.error("Verify follow error:", error)
     return NextResponse.json({ error: error.message || "Verification failed" }, { status: 500 })
   }
 }
