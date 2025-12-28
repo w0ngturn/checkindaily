@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         text: randomMessage,
         embeds: [
           {
-            url: "https://checkindaily.xyz",
+            url: "https://checkindaily.xyz/share",
           },
         ],
       }),

@@ -7,6 +7,7 @@ import { RewardsDisplay } from "@/components/rewards-display"
 import { AnalyticsPanel } from "@/components/analytics-panel"
 import { Leaderboard } from "@/components/leaderboard"
 import { BottomNav } from "@/components/bottom-nav"
+import { Tasks } from "@/components/tasks"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
 import Roadmap from "@/components/roadmap"
 
@@ -19,7 +20,7 @@ export default function Home() {
   const [checkinSuccess, setCheckinSuccess] = useState(false)
   const [checkinData, setCheckinData] = useState<any>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "features" | "roadmap">("home")
+  const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "features" | "roadmap" | "tasks">("home")
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -203,6 +204,13 @@ export default function Home() {
                 </section>
               )}
             </>
+          )}
+
+          {activeTab === "tasks" && (
+            <section className="mt-4">
+              <h2 className="mb-4 text-lg font-bold text-foreground">Tasks</h2>
+              <Tasks fid={userFid} />
+            </section>
           )}
 
           {activeTab === "leaderboard" && (
