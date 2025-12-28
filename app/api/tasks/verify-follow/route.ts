@@ -5,8 +5,8 @@ export const runtime = "nodejs"
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-// @checkinxyz FID
-const CHECKINXYZ_FID = 1029791
+// @checkinxyz username - we'll lookup FID dynamically
+const CHECKINXYZ_USERNAME = "checkinxyz"
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +14,11 @@ export async function POST(request: Request) {
 
     if (!fid) {
       return NextResponse.json({ error: "FID required" }, { status: 400 })
+    }
+
+    const neynarApiKey = process.env.NEYNAR_API_KEY
+    if (!neynarApiKey) {
+      return NextResponse.json({ error: "Neynar API not configured" }, { status: 500 })
     }
 
     // Check if task already completed
@@ -33,16 +38,8 @@ export async function POST(request: Request) {
       })
     }
 
-    // Verify follow using Neynar API
-    const neynarApiKey = process.env.NEYNAR_API_KEY
-    if (!neynarApiKey) {
-      return NextResponse.json({ error: "Neynar API not configured" }, { status: 500 })
-    }
-
-    // We fetch @checkinxyz profile with viewer_fid set to the user
-    // Then check viewer_context.following which tells if viewer follows the target
-    const followResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/bulk?fids=${CHECKINXYZ_FID}&viewer_fid=${fid}`,
+    const userLookupResponse = await fetch(
+      `https://api.neynar.com/v2/farcaster/user/by_username?username=${CHECKINXYZ_USERNAME}`,
       {
         headers: {
           accept: "application/json",
@@ -51,27 +48,83 @@ export async function POST(request: Request) {
       },
     )
 
-    if (!followResponse.ok) {
-      const errorText = await followResponse.text()
-      console.error("Neynar API error:", errorText)
-      throw new Error("Failed to verify follow status")
+    if (!userLookupResponse.ok) {
+      const errorText = await userLookupResponse.text()
+      console.error("[v0] User lookup error:", errorText)
+      return NextResponse.json({ error: "Failed to lookup @checkinxyz" }, { status: 500 })
     }
 
-    const followData = await followResponse.json()
-    const targetUser = followData.users?.[0]
+    const userLookupData = await userLookupResponse.json()
+    const checkinxyzFid = userLookupData.user?.fid
 
-    // viewer_context.following = true means the viewer follows the target
-    // When we set viewer_fid=user and fetch target=@checkinxyz:
-    // - viewer_context.following = user follows @checkinxyz (THIS IS WHAT WE WANT)
-    // - viewer_context.followed_by = @checkinxyz follows user
-    const isFollowing = targetUser?.viewer_context?.following === true
+    if (!checkinxyzFid) {
+      console.error("[v0] @checkinxyz FID not found:", userLookupData)
+      return NextResponse.json({ error: "@checkinxyz account not found" }, { status: 500 })
+    }
 
-    console.log("[v0] Follow check result:", {
-      userFid: fid,
-      targetFid: CHECKINXYZ_FID,
-      viewerContext: targetUser?.viewer_context,
-      isFollowing,
+    console.log("[v0] @checkinxyz FID:", checkinxyzFid)
+
+    // Fetch the user's profile with @checkinxyz as viewer
+    // Then we can see if @checkinxyz is in the user's following list
+    // Alternative: check if user FID is in @checkinxyz's followers
+
+    // Method: Get user's following and check if @checkinxyz is in it
+    const followingResponse = await fetch(`https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=100`, {
+      headers: {
+        accept: "application/json",
+        "x-api-key": neynarApiKey,
+      },
     })
+
+    if (!followingResponse.ok) {
+      const errorText = await followingResponse.text()
+      console.error("[v0] Following fetch error:", errorText)
+      return NextResponse.json({ error: "Failed to fetch following list" }, { status: 500 })
+    }
+
+    const followingData = await followingResponse.json()
+
+    // Check if @checkinxyz is in user's following list
+    let isFollowing = false
+    let cursor = null
+    let checkedCount = 0
+
+    // Check first page
+    const followingUsers = followingData.users || []
+    isFollowing = followingUsers.some((user: any) => user.fid === checkinxyzFid)
+    checkedCount += followingUsers.length
+    cursor = followingData.next?.cursor
+
+    console.log("[v0] First page check:", {
+      userFid: fid,
+      checkinxyzFid,
+      checkedCount,
+      isFollowing,
+      hasMore: !!cursor,
+    })
+
+    // If not found in first 100, check more pages (up to 500 total)
+    while (!isFollowing && cursor && checkedCount < 500) {
+      const nextResponse = await fetch(
+        `https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=100&cursor=${cursor}`,
+        {
+          headers: {
+            accept: "application/json",
+            "x-api-key": neynarApiKey,
+          },
+        },
+      )
+
+      if (!nextResponse.ok) break
+
+      const nextData = await nextResponse.json()
+      const nextUsers = nextData.users || []
+      isFollowing = nextUsers.some((user: any) => user.fid === checkinxyzFid)
+      checkedCount += nextUsers.length
+      cursor = nextData.next?.cursor
+
+      console.log("[v0] Page check:", { checkedCount, isFollowing, hasMore: !!cursor })
+    }
 
     if (isFollowing) {
       // Mark task as completed (not claimed yet)
@@ -93,10 +146,10 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       isFollowing: false,
-      message: "You are not following @checkinxyz yet",
+      message: "You need to follow @checkinxyz first",
     })
   } catch (error: any) {
-    console.error("Verify follow error:", error)
+    console.error("[v0] Verify follow error:", error)
     return NextResponse.json({ error: error.message || "Verification failed" }, { status: 500 })
   }
 }
