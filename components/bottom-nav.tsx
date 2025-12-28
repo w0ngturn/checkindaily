@@ -1,10 +1,10 @@
 "use client"
 
-import { Home, Trophy, Sparkles, Map, ClipboardList } from "lucide-react"
+import { Home, Trophy, Map, ClipboardList, Coins } from "lucide-react"
 
 interface BottomNavProps {
-  activeTab: "home" | "leaderboard" | "features" | "roadmap" | "tasks"
-  onTabChange: (tab: "home" | "leaderboard" | "features" | "roadmap" | "tasks") => void
+  activeTab: "home" | "leaderboard" | "roadmap" | "tasks" | "tokens"
+  onTabChange: (tab: "home" | "leaderboard" | "roadmap" | "tasks" | "tokens") => void
 }
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
@@ -12,7 +12,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     { id: "home" as const, label: "Home", icon: Home },
     { id: "tasks" as const, label: "Tasks", icon: ClipboardList },
     { id: "leaderboard" as const, label: "Leaderboard", icon: Trophy },
-    { id: "features" as const, label: "Features", icon: Sparkles },
+    { id: "tokens" as const, label: "Tokens", icon: Coins },
     { id: "roadmap" as const, label: "Roadmap", icon: Map },
   ]
 

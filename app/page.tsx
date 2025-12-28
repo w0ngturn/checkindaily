@@ -8,8 +8,10 @@ import { AnalyticsPanel } from "@/components/analytics-panel"
 import { Leaderboard } from "@/components/leaderboard"
 import { BottomNav } from "@/components/bottom-nav"
 import { Tasks } from "@/components/tasks"
+import { Tokens } from "@/components/tokens"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
 import Roadmap from "@/components/roadmap"
+import { ChevronDown, ChevronUp } from "lucide-react"
 
 export default function Home() {
   const [loading, setLoading] = useState(false)
@@ -20,7 +22,8 @@ export default function Home() {
   const [checkinSuccess, setCheckinSuccess] = useState(false)
   const [checkinData, setCheckinData] = useState<any>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "features" | "roadmap" | "tasks">("home")
+  const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "roadmap" | "tasks" | "tokens">("home")
+  const [showHowItWorks, setShowHowItWorks] = useState(false)
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -194,6 +197,44 @@ export default function Home() {
                 </div>
               </section>
 
+              {/* How it works collapsible section */}
+              <section className="mt-4">
+                <button
+                  onClick={() => setShowHowItWorks(!showHowItWorks)}
+                  className="w-full flex items-center justify-between rounded-2xl border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 px-4 py-3 shadow-xl"
+                >
+                  <span className="text-sm font-bold text-foreground">How it works</span>
+                  {showHowItWorks ? (
+                    <ChevronUp className="h-5 w-5 text-cyan-400" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-cyan-400" />
+                  )}
+                </button>
+
+                {showHowItWorks && (
+                  <div className="mt-3 space-y-3">
+                    {[
+                      { title: "Daily Check-In", desc: "Simple on-chain or off-chain proof of activity.", icon: "📅" },
+                      { title: "Streak Multipliers", desc: "Longer streaks unlock higher rewards.", icon: "🔥" },
+                      { title: "Community Drops", desc: "Airdrops based on real engagement, not bots.", icon: "🎁" },
+                    ].map((item) => (
+                      <div
+                        key={item.title}
+                        className="rounded-2xl border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 p-4 shadow-xl"
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">{item.icon}</span>
+                          <div>
+                            <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
+                            <p className="mt-1 text-xs text-muted">{item.desc}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
               {userFid && (
                 <section className="mt-4" key={refreshKey}>
                   <div className="grid gap-3 grid-cols-3">
@@ -220,35 +261,16 @@ export default function Home() {
             </section>
           )}
 
-          {activeTab === "features" && (
-            <section className="mt-4">
-              <h2 className="mb-4 text-lg font-bold text-foreground">Core Features</h2>
-              <div className="space-y-3">
-                {[
-                  { title: "Daily Check-In", desc: "Simple on-chain or off-chain proof of activity.", icon: "📅" },
-                  { title: "Streak Multipliers", desc: "Longer streaks unlock higher rewards.", icon: "🔥" },
-                  { title: "Community Drops", desc: "Airdrops based on real engagement, not bots.", icon: "🎁" },
-                ].map((item) => (
-                  <div
-                    key={item.title}
-                    className="rounded-2xl border border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 p-4 shadow-xl"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">{item.icon}</span>
-                      <div>
-                        <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
-                        <p className="mt-1 text-xs text-muted">{item.desc}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
           {activeTab === "roadmap" && (
             <section className="mt-4">
               <Roadmap />
+            </section>
+          )}
+
+          {activeTab === "tokens" && (
+            <section className="mt-4">
+              <h2 className="mb-4 text-lg font-bold text-foreground">$CHECKIN Token</h2>
+              <Tokens />
             </section>
           )}
         </div>
