@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@farcaster/frame-sdk':
+        specifier: ^0.0.26
+        version: 0.0.26(typescript@5.0.2)(zod@3.25.76)
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.60.0(react@19.2.0))
@@ -215,6 +218,12 @@ packages:
 
   '@emnapi/runtime@1.7.1':
     resolution: {integrity: sha512-PVtJr5CmLwYAU9PZDMITZoR5iAOShYREoR45EyyLrbntV50mdePTgUn4AmOw90Ifcj+x2kRjdzr1HP3RrNiHGA==}
+
+  '@farcaster/frame-core@0.0.24':
+    resolution: {integrity: sha512-iO/Jxz6mZBVUoLIY753Id5Yhn6DHBakQkIBXf0mreAcnjPGCMvKx/0xKEM3ns3M801PqoX7VLYO4q+kKxYzQ0A==}
+
+  '@farcaster/frame-sdk@0.0.26':
+    resolution: {integrity: sha512-tOoJcJLXXezjmP0gg/MOU/mCjNdWyL+j99XMylYCovel1etDQjLovGamVex8A6eELryLZ4LElV9AIbxP/i9IfA==}
 
   '@floating-ui/core@1.7.3':
     resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
@@ -1349,6 +1358,9 @@ packages:
       react: ^18 || ^19 || ^19.0.0-rc
       react-dom: ^18 || ^19 || ^19.0.0-rc
 
+  comlink@4.4.2:
+    resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
+
   cookie@1.1.1:
     resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
     engines: {node: '>=18'}
@@ -1631,6 +1643,14 @@ packages:
       typescript:
         optional: true
 
+  ox@0.4.4:
+    resolution: {integrity: sha512-oJPEeCDs9iNiPs6J0rTx+Y0KGeCGyCAA3zo94yZhm8G5WpOxrwUtn2Ie/Y8IyARSqqY/j9JTKA3Fc1xs1DvFnw==}
+    peerDependencies:
+      typescript: '>=5.4.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -1897,6 +1917,23 @@ snapshots:
     dependencies:
       tslib: 2.8.1
     optional: true
+
+  '@farcaster/frame-core@0.0.24(typescript@5.0.2)':
+    dependencies:
+      ox: 0.4.4(typescript@5.0.2)(zod@3.25.76)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - typescript
+
+  '@farcaster/frame-sdk@0.0.26(typescript@5.0.2)(zod@3.25.76)':
+    dependencies:
+      '@farcaster/frame-core': 0.0.24(typescript@5.0.2)
+      comlink: 4.4.2
+      eventemitter3: 5.0.1
+      ox: 0.4.4(typescript@5.0.2)(zod@3.25.76)
+    transitivePeerDependencies:
+      - typescript
+      - zod
 
   '@floating-ui/core@1.7.3':
     dependencies:
@@ -2999,6 +3036,8 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
+  comlink@4.4.2: {}
+
   cookie@1.1.1: {}
 
   csstype@3.2.3: {}
@@ -3214,6 +3253,20 @@ snapshots:
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.0.2)(zod@3.25.76)
+      eventemitter3: 5.0.1
+    optionalDependencies:
+      typescript: 5.0.2
+    transitivePeerDependencies:
+      - zod
+
+  ox@0.4.4(typescript@5.0.2)(zod@3.25.76):
+    dependencies:
+      '@adraffy/ens-normalize': 1.11.1
       '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0

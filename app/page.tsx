@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { SplashScreen } from "@/components/splash-screen"
 import { StreakDisplay } from "@/components/streak-display"
 import { RewardsDisplay } from "@/components/rewards-display"
@@ -25,51 +25,48 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "roadmap" | "tasks" | "tokens">("home")
   const [showHowItWorks, setShowHowItWorks] = useState(false)
+  const [sdkInstance, setSdkInstance] = useState<any>(null)
 
-  useEffect(() => {
-    const initializeApp = async () => {
-      // Check if we're in an iframe (Farcaster mini app context)
-      const isInFrame = typeof window !== "undefined" && window.parent !== window
+  const initializeSdk = useCallback(async () => {
+    try {
+      const sdk = (await import("@farcaster/frame-sdk")).default
+      setSdkInstance(sdk)
 
-      if (isInFrame) {
-        // Listen for context from parent frame
-        const handleMessage = async (event: MessageEvent) => {
-          if (event.data?.type === "frameContext" && event.data?.context?.user?.fid) {
-            const fid = event.data.context.user.fid
-            setUserFid(fid)
+      const context = await sdk.context
 
-            let username = event.data.context.user.username || "User"
-            if (!username || username === "User") {
-              try {
-                const neynarUsername = await getUsernameFromNeynar(fid)
-                if (neynarUsername) username = neynarUsername
-              } catch {}
-            }
+      if (context?.user?.fid) {
+        const fid = context.user.fid
+        setUserFid(fid)
 
-            setUserData({
-              fid,
-              username,
-              displayName: event.data.context.user.displayName || username,
-              pfpUrl: event.data.context.user.pfpUrl || null,
-            })
-          }
+        let username = context.user.username || "User"
+        if (!username || username === "User") {
+          try {
+            const neynarUsername = await getUsernameFromNeynar(fid)
+            if (neynarUsername) username = neynarUsername
+          } catch {}
         }
 
-        window.addEventListener("message", handleMessage)
-
-        // Request context from parent
-        window.parent.postMessage({ type: "requestContext" }, "*")
-
-        setTimeout(() => {
-          window.removeEventListener("message", handleMessage)
-        }, 3000)
+        setUserData({
+          fid,
+          username,
+          displayName: context.user.displayName || username,
+          pfpUrl: context.user.pfpUrl || null,
+        })
       }
 
-      setTimeout(() => setShowSplash(false), 800)
+      // Signal to Warpcast that the app is ready
+      sdk.actions.ready()
+    } catch (err) {
+      console.log("[v0] SDK initialization error:", err)
+    } finally {
+      // Always hide splash after initialization attempt
+      setTimeout(() => setShowSplash(false), 500)
     }
-
-    initializeApp()
   }, [])
+
+  useEffect(() => {
+    initializeSdk()
+  }, [initializeSdk])
 
   const handleCheckin = async () => {
     setLoading(true)
