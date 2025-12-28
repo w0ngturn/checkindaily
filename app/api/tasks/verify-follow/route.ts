@@ -16,6 +16,8 @@ export async function POST(request: Request) {
     }
 
     const neynarApiKey = process.env.NEYNAR_API_KEY
+    console.log("[v0] NEYNAR_API_KEY exists:", !!neynarApiKey)
+
     if (!neynarApiKey) {
       return NextResponse.json({ error: "Neynar API not configured" }, { status: 500 })
     }
@@ -39,10 +41,12 @@ export async function POST(request: Request) {
 
     const relationshipUrl = `https://api.neynar.com/v2/farcaster/user/relationship?fid=${fid}&target_fid=${CHECKINXYZ_FID}`
 
+    console.log("[v0] Fetching relationship:", relationshipUrl)
+
     const relationshipResponse = await fetch(relationshipUrl, {
       headers: {
         accept: "application/json",
-        api_key: neynarApiKey,
+        "x-api-key": neynarApiKey,
       },
     })
 
