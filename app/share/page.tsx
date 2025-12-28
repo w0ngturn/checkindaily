@@ -4,7 +4,7 @@ type Props = {
   searchParams: Promise<{ streak?: string; points?: string; tier?: string }>
 }
 
-const OG_IMAGE_URL = "https://checkindaily.xyz/images/check-20in-20daily.png"
+const OG_IMAGE_URL = "https://checkindaily.xyz/images/checkin-og.png"
 const SPLASH_IMAGE_URL = "https://checkindaily.xyz/images/checkin-logo.png"
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
