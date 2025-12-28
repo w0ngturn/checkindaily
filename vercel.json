@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-checkin?secret=ckin_9f8c3e7a2d1b4a6f",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
