@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const relationshipResponse = await fetch(relationshipUrl, {
       headers: {
         accept: "application/json",
-        "x-api-key": neynarApiKey,
+        api_key: neynarApiKey,
       },
     })
 
