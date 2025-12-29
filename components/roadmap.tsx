@@ -46,19 +46,6 @@ export default function Roadmap() {
     },
     {
       phase: "Phase 3",
-      title: "Referral Rewards",
-      status: "upcoming",
-      description:
-        "Implement referral rewards system with invite bonuses, tier-based rewards, and points accumulation to incentivize community growth.",
-      items: [
-        { title: "Referral Link System", completed: false },
-        { title: "Invite Bonus Rewards", completed: false },
-        { title: "Tier-based Multipliers", completed: false },
-        { title: "Referral Leaderboard", completed: false },
-      ],
-    },
-    {
-      phase: "Phase 4",
       title: "$CHECKIN Token Launch",
       status: "upcoming",
       description:
@@ -68,6 +55,19 @@ export default function Roadmap() {
         { title: "Tokenomics & Distribution Plan", completed: false },
         { title: "Airdrop for Early Supporters", completed: false },
         { title: "DEX Listing & Liquidity Pool", completed: false },
+      ],
+    },
+    {
+      phase: "Phase 4",
+      title: "Referral Rewards",
+      status: "upcoming",
+      description:
+        "Implement referral rewards system with invite bonuses, tier-based rewards, and points accumulation to incentivize community growth.",
+      items: [
+        { title: "Referral Link System", completed: false },
+        { title: "Invite Bonus Rewards", completed: false },
+        { title: "Tier-based Multipliers", completed: false },
+        { title: "Referral Leaderboard", completed: false },
       ],
     },
     {
