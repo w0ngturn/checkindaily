@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Geist } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import Script from "next/script"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -64,6 +63,21 @@ export const metadata: Metadata = {
   },
 }
 
+const btoaPolyfillScript = `
+(function(){
+  if(typeof window==='undefined')return;
+  var orig=window.btoa;
+  window.btoa=function(s){
+    try{return orig(s)}catch(e){
+      var o='',i=0,c;
+      s=unescape(encodeURIComponent(s));
+      while(i<s.length){c=s.charCodeAt(i++);o+=String.fromCharCode(c)}
+      try{return orig(o)}catch(e2){return''}
+    }
+  };
+})();
+`
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -72,31 +86,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <Script id="btoa-polyfill" strategy="beforeInteractive">
-          {`
-            (function() {
-              if (typeof window !== 'undefined') {
-                var originalBtoa = window.btoa;
-                window.btoa = function(str) {
-                  try {
-                    return originalBtoa(str);
-                  } catch (e) {
-                    try {
-                      var bytes = new TextEncoder().encode(str);
-                      var binary = '';
-                      for (var i = 0; i < bytes.length; i++) {
-                        binary += String.fromCharCode(bytes[i]);
-                      }
-                      return originalBtoa(binary);
-                    } catch (e2) {
-                      return '';
-                    }
-                  }
-                };
-              }
-            })();
-          `}
-        </Script>
+        <script dangerouslySetInnerHTML={{ __html: btoaPolyfillScript }} />
       </head>
       <body className={`font-sans antialiased`}>
         {children}
