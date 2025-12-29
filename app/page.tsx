@@ -31,7 +31,7 @@ export default function Home() {
 
   const initializeSdk = useCallback(async () => {
     try {
-      const sdk = (await import("@farcaster/frame-sdk")).default
+      const { sdk } = await import("@farcaster/miniapp-sdk")
       setSdkInstance(sdk)
 
       const context = await sdk.context

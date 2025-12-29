@@ -176,20 +176,16 @@ export function Tasks({ fid }: TasksProps) {
     let deepLink = ""
 
     if (task.id === "follow_checkinxyz") {
-      // For follow, use warpcast profile deep link
       deepLink = "https://warpcast.com/checkinxyz"
     } else if (task.id === "like_cast" || task.id === "recast_cast") {
-      // For like/recast, open the cast directly
       deepLink = task.link
     }
 
     try {
-      const { sdk } = await import("@farcaster/frame-sdk")
-      // Use SDK openUrl which should open externally
+      const { sdk } = await import("@farcaster/miniapp-sdk")
       await sdk.actions.openUrl(deepLink)
     } catch (error) {
       console.error("Failed to open URL with SDK:", error)
-      // Fallback: try window.open with _blank
       window.open(deepLink, "_blank")
     }
   }

@@ -64,11 +64,28 @@ export async function processCheckin(
       newStreak = 1
     }
 
+    // This ensures we have an accurate count
+    const { error: historyError } = await supabase.from("checkin_history").insert({
+      fid,
+      checked_in_at: now.toISOString(),
+      streak_at_time: newStreak,
+    })
+
+    if (historyError) {
+      console.error("[v0] Failed to insert checkin_history:", historyError)
+      return { streak: user.streakCount, alreadyCheckedIn: false }
+    }
+
+    const { count: actualCount } = await supabase
+      .from("checkin_history")
+      .select("*", { count: "exact", head: true })
+      .eq("fid", fid)
+
     const updateData: any = {
       last_checkin: now.toISOString(),
       last_seen: now.toISOString(),
       streak_count: newStreak,
-      total_checkins: user.totalCheckins + 1,
+      total_checkins: actualCount || user.totalCheckins + 1,
       updated_at: now.toISOString(),
     }
 
@@ -88,17 +105,21 @@ export async function processCheckin(
 
       await awardRewards(fid, pointsEarned, newStreak, multiplierValue)
 
-      // Log to history
-      await supabase.from("checkin_history").insert({
-        fid,
-        checked_in_at: now.toISOString(),
-        streak_at_time: newStreak,
-      })
-
       return { streak: newStreak, alreadyCheckedIn: false, pointsEarned, tier }
     }
 
     return { streak: newStreak, alreadyCheckedIn: false }
+  }
+
+  // New user - insert checkin_history first
+  const { error: historyError } = await supabase.from("checkin_history").insert({
+    fid,
+    checked_in_at: now.toISOString(),
+    streak_at_time: 1,
+  })
+
+  if (historyError) {
+    console.error("[v0] Failed to insert checkin_history for new user:", historyError)
   }
 
   const insertData: any = {
@@ -123,12 +144,6 @@ export async function processCheckin(
   if (!error) {
     const { pointsEarned, tier } = await calculateRewards(fid, 1)
     await awardRewards(fid, pointsEarned, 1, 1.0)
-
-    await supabase.from("checkin_history").insert({
-      fid,
-      checked_in_at: now.toISOString(),
-      streak_at_time: 1,
-    })
 
     return { streak: 1, alreadyCheckedIn: false, pointsEarned, tier }
   }

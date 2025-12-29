@@ -21,11 +21,10 @@ export function ShareStreak({ fid, streakCount, totalPoints, tier }: ShareStreak
       const composeUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(shareUrl)}`
 
       try {
-        const { sdk } = await import("@farcaster/frame-sdk")
+        const { sdk } = await import("@farcaster/miniapp-sdk")
         await sdk.actions.openUrl(composeUrl)
       } catch (error) {
         console.error("Failed to open composer with SDK:", error)
-        // Fallback: open compose URL directly
         window.open(composeUrl, "_blank")
       }
 

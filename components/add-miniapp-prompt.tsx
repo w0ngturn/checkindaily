@@ -17,7 +17,7 @@ export function AddMiniAppPrompt({ onClose, onAdded }: AddMiniAppPromptProps) {
     setError("")
 
     try {
-      const sdk = (await import("@farcaster/frame-sdk")).default
+      const { sdk } = await import("@farcaster/miniapp-sdk")
       await sdk.actions.addFrame()
       onAdded()
     } catch (err: any) {
