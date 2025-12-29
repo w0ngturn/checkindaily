@@ -92,6 +92,6 @@ export async function POST(request: Request) {
 function calculateTier(points: number): string {
   if (points >= 1000) return "platinum"
   if (points >= 500) return "gold"
-  if (points >= 100) return "silver"
+  if (points >= 150) return "silver" // Changed from 100 to 150
   return "bronze"
 }

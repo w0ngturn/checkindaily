@@ -7,24 +7,43 @@ export interface UserRewards {
   lastRewardDate: string | null
 }
 
+// Bronze: 0-149 pts, Silver: 150-499 pts, Gold: 500-999 pts, Platinum: 1000+ pts
+export function getTierByPoints(totalPoints: number): string {
+  if (totalPoints >= 1000) return "platinum"
+  if (totalPoints >= 500) return "gold"
+  if (totalPoints >= 150) return "silver"
+  return "bronze"
+}
+
+export function getMultiplierByTier(tier: string): number {
+  switch (tier) {
+    case "platinum":
+      return 3.0
+    case "gold":
+      return 2.0
+    case "silver":
+      return 1.5
+    default:
+      return 1.0
+  }
+}
+
 /**
  * Calculate reward multiplier based on streak length
- * Bronze (0-6 days): 1.0x
- * Silver (7-14 days): 1.5x
- * Gold (15-29 days): 2.0x
- * Platinum (30+ days): 3.0x
+ * This still gives bonus for streaks, but tier is determined by total points
  */
 export function calculateMultiplier(streak: number): { multiplier: number; tier: string } {
+  let streakMultiplier = 1.0
   if (streak >= 30) {
-    return { multiplier: 3.0, tier: "platinum" }
+    streakMultiplier = 1.5
+  } else if (streak >= 15) {
+    streakMultiplier = 1.3
+  } else if (streak >= 7) {
+    streakMultiplier = 1.2
   }
-  if (streak >= 15) {
-    return { multiplier: 2.0, tier: "gold" }
-  }
-  if (streak >= 7) {
-    return { multiplier: 1.5, tier: "silver" }
-  }
-  return { multiplier: 1.0, tier: "bronze" }
+
+  // Tier is placeholder here, actual tier is calculated from total points
+  return { multiplier: streakMultiplier, tier: "bronze" }
 }
 
 /**
@@ -33,10 +52,18 @@ export function calculateMultiplier(streak: number): { multiplier: number; tier:
 const BASE_POINTS = 10
 
 export async function calculateRewards(fid: number, streak: number): Promise<{ pointsEarned: number; tier: string }> {
-  const { multiplier, tier } = calculateMultiplier(streak)
-  const pointsEarned = Math.floor(BASE_POINTS * multiplier)
+  const { multiplier: streakMultiplier } = calculateMultiplier(streak)
 
-  return { pointsEarned, tier }
+  const userRewards = await getUserRewards(fid)
+  const currentPoints = userRewards?.totalPoints || 0
+  const currentTier = getTierByPoints(currentPoints)
+  const tierMultiplier = getMultiplierByTier(currentTier)
+
+  // Total multiplier = streak bonus * tier bonus
+  const totalMultiplier = streakMultiplier * tierMultiplier
+  const pointsEarned = Math.floor(BASE_POINTS * totalMultiplier)
+
+  return { pointsEarned, tier: currentTier }
 }
 
 export async function awardRewards(
@@ -52,11 +79,14 @@ export async function awardRewards(
 
   let rewards: any
   if (existingRewards) {
+    const newTotalPoints = existingRewards.total_points + pointsEarned
+    const newTier = getTierByPoints(newTotalPoints)
+
     const { data } = await supabase
       .from("user_rewards")
       .update({
-        total_points: existingRewards.total_points + pointsEarned,
-        tier: calculateMultiplier(streak).tier,
+        total_points: newTotalPoints,
+        tier: newTier,
         last_reward_date: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -65,12 +95,14 @@ export async function awardRewards(
       .single()
     rewards = data
   } else {
+    const tier = getTierByPoints(pointsEarned)
+
     const { data } = await supabase
       .from("user_rewards")
       .insert({
         fid,
         total_points: pointsEarned,
-        tier: calculateMultiplier(streak).tier,
+        tier: tier,
         last_reward_date: new Date().toISOString(),
       })
       .select()

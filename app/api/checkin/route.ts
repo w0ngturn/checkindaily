@@ -20,13 +20,17 @@ async function getSupabaseClient() {
 }
 
 export async function POST(req: Request) {
+  const requestId = `checkin-${Date.now()}-${Math.random().toString(36).substring(7)}`
+  console.log(`[v0] [${requestId}] Check-in request started`)
+
   try {
     const body = await req.json()
+    console.log(`[v0] [${requestId}] Request body received:`, { fid: body.fid || body.untrustedData?.fid })
 
     const validatedData = await validateFarcaster(body)
 
     if (!validatedData) {
-      console.log("[v0] Failed to validate Farcaster data")
+      console.log(`[v0] [${requestId}] Failed to validate Farcaster data`)
       return NextResponse.json({
         frame: {
           image: "https://checkindaily.xyz/error.png",
@@ -36,9 +40,11 @@ export async function POST(req: Request) {
     }
 
     const { fid, address, username, displayName, pfpUrl } = validatedData
+    console.log(`[v0] [${requestId}] Validated user: fid=${fid}, username=${username}`)
+
     const supabase = await getSupabaseClient()
 
-    await supabase.from("users_checkins").upsert(
+    const { error: upsertError } = await supabase.from("users_checkins").upsert(
       {
         fid,
         wallet_address: address,
@@ -50,9 +56,16 @@ export async function POST(req: Request) {
       { onConflict: "fid" },
     )
 
+    if (upsertError) {
+      console.error(`[v0] [${requestId}] Upsert error:`, upsertError)
+    }
+
+    console.log(`[v0] [${requestId}] Processing check-in for fid=${fid}`)
     const result = await processCheckin(fid)
+    console.log(`[v0] [${requestId}] Check-in result:`, result)
 
     if (result.alreadyCheckedIn) {
+      console.log(`[v0] [${requestId}] User already checked in today`)
       return NextResponse.json({
         frame: {
           image: "https://checkindaily.xyz/already.png",
@@ -61,6 +74,7 @@ export async function POST(req: Request) {
       })
     }
 
+    console.log(`[v0] [${requestId}] Check-in successful: streak=${result.streak}, points=${result.pointsEarned}`)
     return NextResponse.json({
       frame: {
         image: "https://checkindaily.xyz/success.png",
@@ -68,7 +82,7 @@ export async function POST(req: Request) {
       },
     })
   } catch (error) {
-    console.error("[v0] Check-in error:", error)
+    console.error(`[v0] [${requestId}] Check-in error:`, error)
     return NextResponse.json({
       frame: {
         image: "https://checkindaily.xyz/error.png",

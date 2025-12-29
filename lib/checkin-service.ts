@@ -1,7 +1,41 @@
 import { createSupabaseServerClient } from "./supabase-server"
-import { calculateRewards, awardRewards } from "./reward-service"
+import { calculateRewards, awardRewards, getTierByPoints, getUserRewards } from "./reward-service"
 
-const DAY = 24 * 60 * 60 * 1000
+// Helper function to check if last check-in was before today's UTC midnight
+function hasCheckedInToday(lastCheckin: string): boolean {
+  const lastCheckinDate = new Date(lastCheckin)
+  const now = new Date()
+
+  // Get UTC dates (year, month, day only)
+  const lastCheckinUTC = Date.UTC(
+    lastCheckinDate.getUTCFullYear(),
+    lastCheckinDate.getUTCMonth(),
+    lastCheckinDate.getUTCDate(),
+  )
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+
+  return lastCheckinUTC === todayUTC
+}
+
+// Helper function to check if streak should continue (checked in yesterday UTC)
+function shouldContinueStreak(lastCheckin: string): boolean {
+  const lastCheckinDate = new Date(lastCheckin)
+  const now = new Date()
+
+  // Get UTC dates
+  const lastCheckinUTC = Date.UTC(
+    lastCheckinDate.getUTCFullYear(),
+    lastCheckinDate.getUTCMonth(),
+    lastCheckinDate.getUTCDate(),
+  )
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+
+  // Check if last check-in was yesterday (1 day difference)
+  const oneDayMs = 24 * 60 * 60 * 1000
+  const daysDiff = (todayUTC - lastCheckinUTC) / oneDayMs
+
+  return daysDiff === 1
+}
 
 export interface UserCheckin {
   fid: number
@@ -41,45 +75,69 @@ export async function processCheckin(
   fid: number,
   profileData?: UserProfileData,
 ): Promise<{ streak: number; alreadyCheckedIn: boolean; pointsEarned?: number; tier?: string }> {
+  const logPrefix = `[v0] [processCheckin:${fid}]`
+  console.log(`${logPrefix} Starting check-in process`)
+
   const supabase = await createSupabaseServerClient()
 
   const user = await getUserCheckin(fid)
   const now = new Date()
 
-  if (user) {
-    const lastCheckinTime = new Date(user.lastCheckin).getTime()
-    const nowTime = now.getTime()
-    const diff = nowTime - lastCheckinTime
+  console.log(
+    `${logPrefix} User data:`,
+    user ? { lastCheckin: user.lastCheckin, streak: user.streakCount, total: user.totalCheckins } : "New user",
+  )
 
-    // Already checked in within the last 24 hours
-    if (diff < DAY) {
+  if (user) {
+    const alreadyCheckedInToday = hasCheckedInToday(user.lastCheckin)
+
+    console.log(
+      `${logPrefix} Last check-in: ${user.lastCheckin}, Already checked in today (UTC): ${alreadyCheckedInToday}`,
+    )
+
+    if (alreadyCheckedInToday) {
+      console.log(`${logPrefix} Already checked in today (UTC midnight reset)`)
       return { streak: user.streakCount, alreadyCheckedIn: true }
     }
 
-    // Update streak
     let newStreak = user.streakCount
-    if (diff < DAY * 2) {
+    const continueStreak = shouldContinueStreak(user.lastCheckin)
+
+    if (continueStreak) {
       newStreak = user.streakCount + 1
+      console.log(`${logPrefix} Continuing streak (checked in yesterday): ${user.streakCount} -> ${newStreak}`)
     } else {
       newStreak = 1
+      console.log(`${logPrefix} Streak reset (missed a day): ${user.streakCount} -> 1`)
     }
 
-    // This ensures we have an accurate count
-    const { error: historyError } = await supabase.from("checkin_history").insert({
-      fid,
-      checked_in_at: now.toISOString(),
-      streak_at_time: newStreak,
-    })
+    // Insert to checkin_history first
+    console.log(`${logPrefix} Inserting checkin_history record`)
+    const { error: historyError, data: historyData } = await supabase
+      .from("checkin_history")
+      .insert({
+        fid,
+        checked_in_at: now.toISOString(),
+        streak_at_time: newStreak,
+      })
+      .select()
 
     if (historyError) {
-      console.error("[v0] Failed to insert checkin_history:", historyError)
+      console.error(`${logPrefix} FAILED to insert checkin_history:`, historyError)
       return { streak: user.streakCount, alreadyCheckedIn: false }
     }
+    console.log(`${logPrefix} checkin_history inserted successfully:`, historyData)
 
-    const { count: actualCount } = await supabase
+    // Get accurate count from checkin_history
+    const { count: actualCount, error: countError } = await supabase
       .from("checkin_history")
       .select("*", { count: "exact", head: true })
       .eq("fid", fid)
+
+    if (countError) {
+      console.error(`${logPrefix} Error counting checkin_history:`, countError)
+    }
+    console.log(`${logPrefix} Actual checkin count from history: ${actualCount}`)
 
     const updateData: any = {
       last_checkin: now.toISOString(),
@@ -96,30 +154,50 @@ export async function processCheckin(
     if (profileData?.verifiedAddress) updateData.verified_address = profileData.verifiedAddress
     if (profileData?.custodyAddress) updateData.custody_address = profileData.custodyAddress
 
-    const { error } = await supabase.from("users_checkins").update(updateData).eq("fid", fid)
+    console.log(`${logPrefix} Updating users_checkins:`, updateData)
+    const { error, data: updateResult } = await supabase
+      .from("users_checkins")
+      .update(updateData)
+      .eq("fid", fid)
+      .select()
 
-    if (!error) {
-      const { pointsEarned, tier } = await calculateRewards(fid, newStreak)
-      const { multiplier } = await calculateRewards(fid, newStreak)
-      const multiplierValue = (multiplier || {}).multiplier || 1.0
-
-      await awardRewards(fid, pointsEarned, newStreak, multiplierValue)
-
-      return { streak: newStreak, alreadyCheckedIn: false, pointsEarned, tier }
+    if (error) {
+      console.error(`${logPrefix} FAILED to update users_checkins:`, error)
+      return { streak: newStreak, alreadyCheckedIn: false }
     }
 
-    return { streak: newStreak, alreadyCheckedIn: false }
+    console.log(`${logPrefix} users_checkins updated successfully:`, updateResult)
+
+    const userRewards = await getUserRewards(fid)
+    const currentPoints = userRewards?.totalPoints || 0
+
+    const { pointsEarned } = await calculateRewards(fid, newStreak)
+    const newTotalPoints = currentPoints + pointsEarned
+    const tier = getTierByPoints(newTotalPoints)
+
+    console.log(`${logPrefix} Awarding rewards: points=${pointsEarned}, newTotal=${newTotalPoints}, tier=${tier}`)
+    await awardRewards(fid, pointsEarned, newStreak, 1.0)
+
+    console.log(`${logPrefix} Check-in complete: streak=${newStreak}, total=${actualCount}, points=${pointsEarned}`)
+    return { streak: newStreak, alreadyCheckedIn: false, pointsEarned, tier }
   }
 
-  // New user - insert checkin_history first
-  const { error: historyError } = await supabase.from("checkin_history").insert({
-    fid,
-    checked_in_at: now.toISOString(),
-    streak_at_time: 1,
-  })
+  // New user
+  console.log(`${logPrefix} New user - creating first check-in`)
+
+  const { error: historyError, data: historyData } = await supabase
+    .from("checkin_history")
+    .insert({
+      fid,
+      checked_in_at: now.toISOString(),
+      streak_at_time: 1,
+    })
+    .select()
 
   if (historyError) {
-    console.error("[v0] Failed to insert checkin_history for new user:", historyError)
+    console.error(`${logPrefix} FAILED to insert checkin_history for new user:`, historyError)
+  } else {
+    console.log(`${logPrefix} checkin_history inserted for new user:`, historyData)
   }
 
   const insertData: any = {
@@ -139,14 +217,20 @@ export async function processCheckin(
   if (profileData?.verifiedAddress) insertData.verified_address = profileData.verifiedAddress
   if (profileData?.custodyAddress) insertData.custody_address = profileData.custodyAddress
 
-  const { error } = await supabase.from("users_checkins").insert(insertData)
+  console.log(`${logPrefix} Inserting new user to users_checkins:`, insertData)
+  const { error, data: insertResult } = await supabase.from("users_checkins").insert(insertData).select()
 
-  if (!error) {
-    const { pointsEarned, tier } = await calculateRewards(fid, 1)
-    await awardRewards(fid, pointsEarned, 1, 1.0)
-
-    return { streak: 1, alreadyCheckedIn: false, pointsEarned, tier }
+  if (error) {
+    console.error(`${logPrefix} FAILED to insert new user to users_checkins:`, error)
+    return { streak: 1, alreadyCheckedIn: false }
   }
 
-  return { streak: 1, alreadyCheckedIn: false }
+  console.log(`${logPrefix} New user inserted successfully:`, insertResult)
+
+  const { pointsEarned } = await calculateRewards(fid, 1)
+  const tier = getTierByPoints(pointsEarned)
+  await awardRewards(fid, pointsEarned, 1, 1.0)
+
+  console.log(`${logPrefix} New user check-in complete: streak=1, points=${pointsEarned}`)
+  return { streak: 1, alreadyCheckedIn: false, pointsEarned, tier }
 }
