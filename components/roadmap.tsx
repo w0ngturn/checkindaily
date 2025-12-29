@@ -70,6 +70,19 @@ export default function Roadmap() {
         { title: "DEX Listing & Liquidity Pool", completed: false },
       ],
     },
+    {
+      phase: "Phase 5",
+      title: "Claim Tokens",
+      status: "upcoming",
+      description:
+        "Users can claim their earned $CHECKIN tokens based on accumulated points from check-ins, streaks, referrals, and completed tasks.",
+      items: [
+        { title: "Points to Token Conversion System", completed: false },
+        { title: "Claim Portal Development", completed: false },
+        { title: "Vesting Schedule Implementation", completed: false },
+        { title: "Claim History & Tracking", completed: false },
+      ],
+    },
   ]
 
   const togglePhase = (phase: string) => {
