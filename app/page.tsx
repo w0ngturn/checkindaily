@@ -9,7 +9,6 @@ import { Leaderboard } from "@/components/leaderboard"
 import { BottomNav } from "@/components/bottom-nav"
 import { Tasks } from "@/components/tasks"
 import { Tokens } from "@/components/tokens"
-import { AddMiniAppPrompt } from "@/components/add-miniapp-prompt"
 import { getUsernameFromNeynar } from "@/lib/get-username-client"
 import Roadmap from "@/components/roadmap"
 import { ChevronDown, ChevronUp } from "lucide-react"
@@ -25,72 +24,75 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [activeTab, setActiveTab] = useState<"home" | "leaderboard" | "roadmap" | "tasks" | "tokens">("home")
   const [showHowItWorks, setShowHowItWorks] = useState(false)
-  const [sdkInstance, setSdkInstance] = useState<any>(null)
-  const [showAddMiniAppPrompt, setShowAddMiniAppPrompt] = useState(false)
-  const [miniAppAdded, setMiniAppAdded] = useState(false)
 
-  const initializeSdk = useCallback(async () => {
+  const initializeContext = useCallback(async () => {
     try {
-      const { sdk } = await import("@farcaster/miniapp-sdk")
-      setSdkInstance(sdk)
+      // Listen for context from Warpcast parent
+      const handleMessage = async (event: MessageEvent) => {
+        if (event.data?.type === "frameContext" && event.data?.context?.user?.fid) {
+          const context = event.data.context
+          const fid = context.user.fid
+          setUserFid(fid)
 
-      const context = await sdk.context
+          let username = context.user.username || "User"
+          if (!username || username === "User") {
+            try {
+              const neynarUsername = await getUsernameFromNeynar(fid)
+              if (neynarUsername) username = neynarUsername
+            } catch {}
+          }
 
-      if (context?.user?.fid) {
-        const fid = context.user.fid
-        setUserFid(fid)
-
-        let username = context.user.username || "User"
-        if (!username || username === "User") {
-          try {
-            const neynarUsername = await getUsernameFromNeynar(fid)
-            if (neynarUsername) username = neynarUsername
-          } catch {}
-        }
-
-        setUserData({
-          fid,
-          username,
-          displayName: context.user.displayName || username,
-          pfpUrl: context.user.pfpUrl || null,
-        })
-
-        if (context.client?.added === false) {
-          setShowAddMiniAppPrompt(true)
-        } else {
-          setMiniAppAdded(true)
+          setUserData({
+            fid,
+            username,
+            displayName: context.user.displayName || username,
+            pfpUrl: context.user.pfpUrl || null,
+          })
         }
       }
 
-      sdk.actions.ready()
+      window.addEventListener("message", handleMessage)
+
+      // Request context from parent
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "requestContext" }, "*")
+      }
+
+      // Fallback: try to get FID from URL params or localStorage for testing
+      const urlParams = new URLSearchParams(window.location.search)
+      const fidParam = urlParams.get("fid")
+      if (fidParam) {
+        const fid = Number.parseInt(fidParam, 10)
+        if (!isNaN(fid)) {
+          setUserFid(fid)
+          try {
+            const username = await getUsernameFromNeynar(fid)
+            setUserData({
+              fid,
+              username: username || "User",
+              displayName: username || "User",
+              pfpUrl: null,
+            })
+          } catch {}
+        }
+      }
+
+      // Signal ready to Warpcast
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "frameReady" }, "*")
+      }
+
+      return () => window.removeEventListener("message", handleMessage)
     } catch (err) {
-      console.log("[v0] SDK initialization error:", err)
+      console.log("Context initialization error:", err)
     } finally {
       setTimeout(() => setShowSplash(false), 500)
     }
   }, [])
 
   useEffect(() => {
-    initializeSdk()
-  }, [initializeSdk])
-
-  useEffect(() => {
-    if (miniAppAdded || !sdkInstance) return
-
-    const checkInterval = setInterval(async () => {
-      try {
-        const context = await sdkInstance.context
-        if (context?.client?.added === false && !showAddMiniAppPrompt) {
-          setShowAddMiniAppPrompt(true)
-        } else if (context?.client?.added === true) {
-          setMiniAppAdded(true)
-          setShowAddMiniAppPrompt(false)
-        }
-      } catch {}
-    }, 60000)
-
-    return () => clearInterval(checkInterval)
-  }, [miniAppAdded, sdkInstance, showAddMiniAppPrompt])
+    initializeContext()
+  }, [initializeContext])
 
   const handleCheckin = async () => {
     setLoading(true)
@@ -145,16 +147,6 @@ export default function Home() {
   return (
     <>
       <SplashScreen isVisible={showSplash} />
-
-      {showAddMiniAppPrompt && !miniAppAdded && (
-        <AddMiniAppPrompt
-          onClose={() => setShowAddMiniAppPrompt(false)}
-          onAdded={() => {
-            setMiniAppAdded(true)
-            setShowAddMiniAppPrompt(false)
-          }}
-        />
-      )}
 
       <main className="min-h-screen bg-background text-foreground pb-20">
         <div className="mx-auto max-w-[1100px] px-4 sm:px-7">

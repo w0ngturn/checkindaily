@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, ChevronUp, Check, Clock } from "lucide-react"
+import { ChevronDown, ChevronUp, Check, Clock, Copy } from "lucide-react"
 
 interface PhaseItem {
   title: string
@@ -14,10 +14,14 @@ interface Phase {
   status: "completed" | "in-progress" | "upcoming"
   description: string
   items: PhaseItem[]
+  contractAddress?: string
 }
+
+const CONTRACT_ADDRESS = "0xC7a98B59785504D6ffBE024Ed878fc53aFd38B07"
 
 export default function Roadmap() {
   const [expandedPhase, setExpandedPhase] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const phases: Phase[] = [
     {
@@ -47,21 +51,20 @@ export default function Roadmap() {
     {
       phase: "Phase 3",
       title: "$CHECKIN Token Launch",
-      status: "upcoming",
-      description:
-        "Launch of $CHECKIN token as the main reward for the community. Token will be used for staking, governance, and exclusive benefits for holders.",
+      status: "completed",
+      description: "Launch of $CHECKIN token as the main reward for the community.",
       items: [
-        { title: "Token Smart Contract Development", completed: false },
-        { title: "Tokenomics & Distribution Plan", completed: false },
-        { title: "DEX Listing & Liquidity Pool", completed: false },
+        { title: "Token Smart Contract Development", completed: true },
+        { title: "Tokenomics & Distribution Plan", completed: true },
+        { title: "DEX Listing & Liquidity Pool", completed: true },
       ],
+      contractAddress: CONTRACT_ADDRESS,
     },
     {
       phase: "Phase 4",
       title: "Referral Rewards",
       status: "upcoming",
-      description:
-        "Implement referral rewards system with invite bonuses, tier-based rewards, and points accumulation to incentivize community growth.",
+      description: "Implement referral rewards system with invite bonuses and tier-based rewards.",
       items: [
         { title: "Referral Link System", completed: false },
         { title: "Invite Bonus Rewards", completed: false },
@@ -73,8 +76,7 @@ export default function Roadmap() {
       phase: "Phase 5",
       title: "Claim Tokens",
       status: "upcoming",
-      description:
-        "Users can claim their earned $CHECKIN tokens based on accumulated points from check-ins, streaks, referrals, and completed tasks.",
+      description: "Users can claim their earned $CHECKIN tokens based on accumulated points.",
       items: [
         { title: "Points to Token Conversion System", completed: false },
         { title: "Claim Portal Development", completed: false },
@@ -85,6 +87,16 @@ export default function Roadmap() {
 
   const togglePhase = (phase: string) => {
     setExpandedPhase(expandedPhase === phase ? null : phase)
+  }
+
+  const copyContractAddress = async (address: string) => {
+    try {
+      await navigator.clipboard.writeText(address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy:", err)
+    }
   }
 
   const getStatusColor = (status: Phase["status"]) => {
@@ -122,7 +134,6 @@ export default function Roadmap() {
               border: "1px solid var(--border)",
             }}
           >
-            {/* Clickable Header */}
             <button
               onClick={() => togglePhase(item.phase)}
               className="w-full p-4 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
@@ -160,10 +171,28 @@ export default function Roadmap() {
               )}
             </button>
 
-            {/* Expandable Content */}
             {expandedPhase === item.phase && (
               <div className="px-4 pb-4 border-t border-white/10">
                 <p className="text-sm text-gray-300 mt-3 mb-4">{item.description}</p>
+
+                {item.contractAddress && (
+                  <div className="mb-4 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                    <p className="text-xs text-cyan-400 mb-1">Contract Address</p>
+                    <button
+                      onClick={() => copyContractAddress(item.contractAddress as string)}
+                      className="flex items-center gap-2 text-sm text-white hover:text-cyan-400 transition-colors group w-full"
+                    >
+                      <span className="font-mono text-xs break-all text-left">{item.contractAddress}</span>
+                      {copied ? (
+                        <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-400 group-hover:text-cyan-400 flex-shrink-0" />
+                      )}
+                    </button>
+                    {copied && <p className="text-xs text-green-400 mt-1">Copied!</p>}
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   {item.items.map((task, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-sm">

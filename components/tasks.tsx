@@ -172,22 +172,8 @@ export function Tasks({ fid }: TasksProps) {
     }
   }
 
-  const handleOpenInFarcaster = async (task: (typeof TASKS)[0]) => {
-    let deepLink = ""
-
-    if (task.id === "follow_checkinxyz") {
-      deepLink = "https://warpcast.com/checkinxyz"
-    } else if (task.id === "like_cast" || task.id === "recast_cast") {
-      deepLink = task.link
-    }
-
-    try {
-      const { sdk } = await import("@farcaster/miniapp-sdk")
-      await sdk.actions.openUrl(deepLink)
-    } catch (error) {
-      console.error("Failed to open URL with SDK:", error)
-      window.open(deepLink, "_blank")
-    }
+  const handleOpenInFarcaster = (task: (typeof TASKS)[0]) => {
+    window.open(task.link, "_blank")
   }
 
   if (loading) {
