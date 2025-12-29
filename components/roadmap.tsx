@@ -53,7 +53,6 @@ export default function Roadmap() {
       items: [
         { title: "Token Smart Contract Development", completed: false },
         { title: "Tokenomics & Distribution Plan", completed: false },
-        { title: "Airdrop for Early Supporters", completed: false },
         { title: "DEX Listing & Liquidity Pool", completed: false },
       ],
     },
@@ -79,7 +78,6 @@ export default function Roadmap() {
       items: [
         { title: "Points to Token Conversion System", completed: false },
         { title: "Claim Portal Development", completed: false },
-        { title: "Vesting Schedule Implementation", completed: false },
         { title: "Claim History & Tracking", completed: false },
       ],
     },
