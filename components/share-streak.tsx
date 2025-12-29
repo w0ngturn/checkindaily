@@ -16,19 +16,16 @@ export function ShareStreak({ fid, streakCount, totalPoints, tier }: ShareStreak
   const handleShare = async () => {
     setSharing(true)
     try {
-      const shareText = `I'm on a ${streakCount}-day streak on CHECKIN! Earned ${totalPoints} points at ${tier} tier. Join me and start building your streak!`
+      const shareText = `🔥 I'm on a ${streakCount}-day streak on CHECKIN!\n\n✨ Earned ${totalPoints} points at ${tier} tier.\n\nJoin me and start building your streak!`
       const shareUrl = `https://checkindaily.xyz`
       const composeUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(shareUrl)}`
 
       try {
         const { sdk } = await import("@farcaster/frame-sdk")
-        await sdk.actions.composeCast({
-          text: shareText,
-          embeds: [shareUrl],
-        })
+        await sdk.actions.openUrl(composeUrl)
       } catch (error) {
-        console.error("Failed to compose cast with SDK:", error)
-        // Fallback: open compose URL
+        console.error("Failed to open composer with SDK:", error)
+        // Fallback: open compose URL directly
         window.open(composeUrl, "_blank")
       }
 
