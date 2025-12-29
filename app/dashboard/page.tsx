@@ -1,4 +1,7 @@
+"use client"
+
 import { Card } from "@/components/ui/card"
+import { useEffect, useState } from "react"
 
 interface DashboardStats {
   totalUsers: number
@@ -25,53 +28,94 @@ interface UserProfile {
   displayName: string | null
 }
 
-async function getDashboardData() {
-  try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_VERCEL_URL
-        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-        : "http://localhost:3000"
-
-    const statsRes = await fetch(`${baseUrl}/api/dashboard/stats`, {
-      cache: "no-store",
-    })
-    const stats = await statsRes.json()
-
-    const usersRes = await fetch(`${baseUrl}/api/dashboard/users`, {
-      cache: "no-store",
-    })
-    const usersData = await usersRes.json()
-    const users = usersData.users || []
-
-    const fids = users.map((u: UserData) => u.fid)
-    let profiles: Record<number, UserProfile> = {}
-
-    if (fids.length > 0) {
-      try {
-        const profilesRes = await fetch(`${baseUrl}/api/users?fids=${fids.join(",")}`, {
-          cache: "no-store",
-        })
-        profiles = await profilesRes.json()
-      } catch (e) {
-        console.error("[v0] Failed to fetch profiles:", e)
-      }
-    }
-
-    return { stats, users, profiles }
-  } catch (error) {
-    console.error("[v0] Dashboard data fetch error:", error)
-    return { stats: null, users: [], profiles: {} }
-  }
-}
-
 function truncateWallet(address: string | null): string {
   if (!address) return "-"
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-export default async function Dashboard() {
-  const { stats, users, profiles } = await getDashboardData()
+export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [users, setUsers] = useState<UserData[]>([])
+  const [profiles, setProfiles] = useState<Record<number, UserProfile>>({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Fetch stats
+        const statsRes = await fetch("/api/dashboard/stats")
+        if (!statsRes.ok) throw new Error("Failed to fetch stats")
+        const statsData = await statsRes.json()
+        setStats(statsData)
+
+        // Fetch users
+        const usersRes = await fetch("/api/dashboard/users")
+        if (!usersRes.ok) throw new Error("Failed to fetch users")
+        const usersData = await usersRes.json()
+        const usersList = usersData.users || []
+        setUsers(usersList)
+
+        // Fetch profiles
+        if (usersList.length > 0) {
+          const fids = usersList.map((u: UserData) => u.fid)
+          try {
+            const profilesRes = await fetch(`/api/users?fids=${fids.join(",")}`)
+            if (profilesRes.ok) {
+              const profilesData = await profilesRes.json()
+              setProfiles(profilesData)
+            }
+          } catch (e) {
+            console.error("Failed to fetch profiles:", e)
+          }
+        }
+      } catch (err) {
+        console.error("Dashboard fetch error:", err)
+        setError(err instanceof Error ? err.message : "Failed to load dashboard")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background text-foreground p-4 sm:p-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Production Dashboard</h1>
+            <p className="text-muted mt-2">Loading...</p>
+          </div>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="p-6 border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900 animate-pulse">
+                <div className="h-4 bg-blue-800 rounded w-24 mb-2"></div>
+                <div className="h-8 bg-blue-800 rounded w-16"></div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen bg-background text-foreground p-4 sm:p-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Production Dashboard</h1>
+            <p className="text-red-400 mt-2">Error: {error}</p>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground p-4 sm:p-8">
@@ -106,7 +150,7 @@ export default async function Dashboard() {
           </div>
         )}
 
-        {stats?.topTier && (
+        {stats?.topTier && stats.topTier.length > 0 && (
           <div className="grid gap-4 grid-cols-1 mb-8">
             <Card className="p-6 border-blue-600 bg-gradient-to-b from-blue-950 to-blue-900">
               <h2 className="text-lg font-bold text-foreground mb-4">Tier Distribution</h2>
@@ -189,7 +233,7 @@ export default async function Dashboard() {
                           </td>
                           <td className="py-3 px-3">
                             <span className="inline-flex items-center gap-1 rounded-full bg-blue-900 px-2 py-1 text-xs font-semibold">
-                              🔥 {user.streak_count}
+                              {user.streak_count}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-foreground">{user.total_checkins}</td>
