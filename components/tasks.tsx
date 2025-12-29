@@ -172,14 +172,25 @@ export function Tasks({ fid }: TasksProps) {
     }
   }
 
-  const handleOpenInFarcaster = (url: string) => {
-    const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : ""
-    const isWarpcast = userAgent.includes("Warpcast") || userAgent.includes("farcaster")
+  const handleOpenInFarcaster = async (task: (typeof TASKS)[0]) => {
+    let deepLink = ""
 
-    if (isWarpcast) {
-      window.location.href = url.replace("https://warpcast.com", "warpcast:/")
-    } else {
-      window.open(url, "_blank")
+    if (task.id === "follow_checkinxyz") {
+      // For follow, use warpcast profile deep link
+      deepLink = "https://warpcast.com/checkinxyz"
+    } else if (task.id === "like_cast" || task.id === "recast_cast") {
+      // For like/recast, open the cast directly
+      deepLink = task.link
+    }
+
+    try {
+      const { sdk } = await import("@farcaster/frame-sdk")
+      // Use SDK openUrl which should open externally
+      await sdk.actions.openUrl(deepLink)
+    } catch (error) {
+      console.error("Failed to open URL with SDK:", error)
+      // Fallback: try window.open with _blank
+      window.open(deepLink, "_blank")
     }
   }
 
@@ -260,7 +271,7 @@ export function Tasks({ fid }: TasksProps) {
                   ) : (
                     <>
                       <button
-                        onClick={() => handleOpenInFarcaster(task.link)}
+                        onClick={() => handleOpenInFarcaster(task)}
                         className="flex items-center gap-1 rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-blue-600"
                       >
                         <ExternalLink className="h-3 w-3" />
